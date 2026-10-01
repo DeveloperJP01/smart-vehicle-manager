@@ -72,3 +72,83 @@ button.primary { background: #3b82f6; color: #fff; border: none; padding: 10px 1
 table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
 th { color: #94a3b8; font-weight: 500; text-align: left; padding: 16px 20px; border-bottom: 1px solid #1e2235; }
 td { padding: 16px 20px; border-bottom: 1px solid #1e2235; color: #e2e8f0; }
+/* --- VIP BLACK & GOLD THEME (COMBINED EDITION) --- */
+body {
+  color: #e8dcc5 !important; 
+  background-color: #0a0f1a !important;
+}
+
+/* Cinematic Dark Background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: -2;
+  background-image: url('https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?q=80&w=2000&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.25) blur(3px);
+}
+
+/* Darker Obsidian Glass + Maximum Rounded Corners */
+.data-card, .sidebar, .page-header {
+  background: rgba(10, 10, 10, 0.85) !important;
+  border: 1px solid rgba(212, 175, 55, 0.4) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.9) !important;
+  border-radius: 24px !important;
+}
+
+/* Alignment & Spacing Fixes */
+.page-header {
+  padding: 24px 36px !important;
+  margin-bottom: 24px !important;
+  box-sizing: border-box !important;
+}
+.page-header h1 {
+  margin: 0 !important;
+  padding-left: 8px !important;
+  line-height: 1.2 !important;
+}
+.data-card {
+  padding: 32px !important;
+  box-sizing: border-box !important;
+}
+
+/* Metallic Gold Buttons, Badges & Links */
+button, .primary, .active-link, .badge {
+  background: linear-gradient(45deg, #b8860b, #ffd700) !important;
+  color: #000 !important;
+  border: none !important;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3) !important;
+  font-weight: 700 !important;
+  border-radius: 50px !important;
+}
+
+button:hover, .primary:hover {
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.7) !important;
+  filter: brightness(1.2) !important;
+}
+
+/* Gold Text Accents */
+h1, h2, h3, .live-indicator {
+  color: #ffd700 !important;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.4) !important;
+}
+
+/* Status Badges & Pill Shapes for Inputs */
+.badge.healthy, .live-dot {
+  background-color: #ffd700 !important;
+  box-shadow: 0 0 10px #ffd700 !important;
+  color: #000 !important;
+}
+input, select, textarea {
+  border-radius: 16px !important;
+}
+
+/* Rounded Camera Scanner Box */
+.data-card div[style*="position: relative"] {
+  border-radius: 20px !important;
+}
+.data-card div[style*="position: absolute"] {
+  border-radius: 12px !important;
+}

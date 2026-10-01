@@ -215,7 +215,92 @@ export const Drivers = ({ token }) => {
   );
 };
 
-export const Settings = () => ( <div><div className="page-header"><h1>Settings</h1></div><div className="data-card" style={{padding:'20px'}}><h2>Settings</h2></div></div> );
+export const Settings = ({ token }) => {
+  const [users, setUsers] = React.useState([]);
+  const [newUsername, setNewUsername] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [newRole, setNewRole] = React.useState('MECHANIC');
+
+  const fetchUsers = async () => {
+    const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+    if(res.ok) setUsers(await res.json());
+  };
+
+  React.useEffect(() => { fetchUsers(); }, []);
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole })
+    });
+    if(res.ok) {
+      setNewUsername(''); setNewPassword(''); fetchUsers();
+    } else {
+      const data = await res.json(); alert(data.error);
+    }
+  };
+
+  const handleDelete = async (id, username) => {
+    if(username.toLowerCase() === 'admin') return alert("Access Denied: Cannot delete Master Admin.");
+    if(!window.confirm(`Are you sure you want to revoke access for ${username}?`)) return;
+    
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(res.ok) fetchUsers();
+    else { const data = await res.json(); alert(data.error); }
+  };
+
+  return (
+    <div>
+      <div className="page-header"><h1>⚙️ Command Center Settings</h1></div>
+      
+      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Access Control & Identity</h2>
+        
+        {/* Add User Form */}
+        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
+          <input placeholder="New Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
+          <input type="password" placeholder="Secure Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
+          <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700'}}>
+            <option value="MECHANIC">Mechanic Level</option>
+            <option value="MANAGER">Manager Level</option>
+          </select>
+          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Grant Access</button>
+        </form>
+
+        {/* Active Users Table */}
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
+              <th style={{padding: '16px', color: '#ffd700'}}>Operator ID</th>
+              <th style={{padding: '16px', color: '#ffd700'}}>Clearance Level</th>
+              <th style={{padding: '16px', color: '#ffd700', textAlign: 'right'}}>Override</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <td style={{padding: '16px', fontWeight: 'bold'}}>{u.username}</td>
+                <td style={{padding: '16px'}}><span className="badge">{u.role}</span></td>
+                <td style={{padding: '16px', textAlign: 'right'}}>
+                  {u.username.toLowerCase() !== 'admin' ? (
+                    <button onClick={() => handleDelete(u.id, u.username)} style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', boxShadow: 'none' }}>Revoke</button>
+                  ) : (
+                    <span style={{ color: '#d4af37', fontStyle: 'italic' }}>Master Admin (Protected)</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 export const GateScanner = ({ token }) => {
   const webcamRef = React.useRef(null);
@@ -250,7 +335,7 @@ export const GateScanner = ({ token }) => {
       <div className="data-card" style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" style={{ width: '100%', display: 'block' }} />
-          <div style={{ position: 'absolute', top: '25%', left: '15%', width: '70%', height: '50%', border: '2px solid #38bdf8', boxShadow: '0 0 15px #38bdf8', background: isScanning ? 'rgba(56, 189, 248, 0.2)' : 'transparent', transition: 'background 0.3s' }} />
+          <div style={{ position: 'absolute', top: '25%', left: '15%', width: '70%', height: '50%', border: '2px solid #ffd700', boxShadow: '0 0 15px #ffd700', background: isScanning ? 'rgba(255, 215, 0, 0.2)' : 'transparent', transition: 'background 0.3s' }} />
         </div>
         
         <button onClick={captureAndScan} className="primary" style={{ width: '100%', marginTop: '20px', padding: '16px', fontSize: '1.1em' }} disabled={isScanning}>
