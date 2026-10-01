@@ -1,0 +1,10 @@
+# Spring Boot Folders
+target/
+*.log
+
+# React Folders
+frontend/node_modules/
+
+# IDE Folders
+.idea/
+.vscode/
