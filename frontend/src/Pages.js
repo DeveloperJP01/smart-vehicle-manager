@@ -24,7 +24,7 @@ export const Vehicles = ({ token }) => {
   const fetchData = () => {
     const headers = { 'Authorization': `Bearer ${token}` };
     fetch('/api/vehicles', { headers }).then(r => r.json()).then(setVehicles);
-    fetch('/api/users', { headers }).then(r => r.json()).then(setUsers);
+    fetch('/api/admin/users', { headers }).then(r => r.json()).then(setUsers);
   };
   useEffect(() => { fetchData(); }, [token]);
 
@@ -114,7 +114,7 @@ export const Maintenance = ({ token }) => {
 
   const fetchAllData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
-    const [uRes, vRes, mRes, tRes] = await Promise.all([ fetch('/api/users', { headers }), fetch('/api/vehicles', { headers }), fetch('/api/mechanics', { headers }), fetch('/api/services', { headers }) ]);
+    const [uRes, vRes, mRes, tRes] = await Promise.all([ fetch('/api/admin/users', { headers }), fetch('/api/vehicles', { headers }), fetch('/api/mechanics', { headers }), fetch('/api/services', { headers }) ]);
     if(uRes.ok) setUsers(await uRes.json()); if(vRes.ok) setVehicles(await vRes.json()); if(mRes.ok) setMechanics(await mRes.json()); if(tRes.ok) setTickets(await tRes.json());
   };
   useEffect(() => { fetchAllData(); }, [token]);
@@ -175,19 +175,19 @@ export const Drivers = ({ token }) => {
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
 
-  const fetchUsers = () => fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setUsers);
+  const fetchUsers = () => fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setUsers);
   useEffect(() => { fetchUsers(); }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
+    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
     setFormData({ fullName: '', email: '', phone: '' });
     fetchUsers();
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this driver?")) return;
-    const res = await fetch(`/api/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) fetchUsers(); else alert(await res.text());
   };
 
