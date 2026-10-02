@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences, Drivers, Settings } from './Pages';
+import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences, Settings, Inventory } from './Pages';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -41,8 +41,10 @@ function App() {
             <li><NavLink to="/maintenance" className={({isActive}) => isActive ? "active-link" : ""}>🔧 Maintenance</NavLink></li>
             <li><NavLink to="/reports" className={({isActive}) => isActive ? "active-link" : ""}>📄 Reports</NavLink></li>
             <li><NavLink to="/geofences" className={({isActive}) => isActive ? "active-link" : ""}>📍 Geofences</NavLink></li>
-            <li><NavLink to="/drivers" className={({isActive}) => isActive ? "active-link" : ""}>👤 Drivers</NavLink></li>
+            
+<li><NavLink to="/inventory" className={({isActive}) => isActive ? "active-link" : ""}>📦 Parts Vault</NavLink></li>
             <li><NavLink to="/settings" className={({isActive}) => isActive ? "active-link" : ""}>⚙ Settings</NavLink></li>
+
           </ul>
           <div className="sidebar-user" onClick={() => {localStorage.removeItem('token'); setToken(null);}}>
             <div className="user-avatar-circle">AD</div>
@@ -55,14 +57,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Overview token={token} />} />
             <Route path="/vehicles" element={<Vehicles token={token} />} />
-<Route path="/scanner" element={<GateScanner token={token} />} />
+            <Route path="/scanner" element={<GateScanner token={token} />} />
             <Route path="/health" element={<SmartHealth token={token} />} />
             <Route path="/alerts" element={<Alerts token={token} />} />
             <Route path="/maintenance" element={<Maintenance token={token} />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/geofences" element={<Geofences />} />
-            <Route path="/drivers" element={<Drivers token={token} />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/inventory" element={<Inventory token={token} />} />
           </Routes>
         </main>
       </div>

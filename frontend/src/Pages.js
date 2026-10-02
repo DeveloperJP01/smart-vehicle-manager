@@ -11,56 +11,93 @@ export const Overview = ({ token }) => {
         <div className="kpi-card"><div className="kpi-icon total">🚘</div><div className="kpi-data"><span className="kpi-val">{stats.fleetSize}</span><span className="kpi-label">Total Fleet</span></div></div>
         <div className="kpi-card"><div className="kpi-icon warning">🔧</div><div className="kpi-data"><span className="kpi-val">{stats.activeServices}</span><span className="kpi-label">Active Orders</span></div></div>
         <div className="kpi-card"><div className="kpi-icon critical">!</div><div className="kpi-data"><span className="kpi-val">{stats.criticalAlerts}</span><span className="kpi-label">Critical Alerts</span></div></div>
-        <div className="kpi-card"><div className="kpi-icon healthy">$</div><div className="kpi-data"><span className="kpi-val">₹{stats.completedBilling}</span><span className="kpi-label">Revenue</span></div></div>
+        <div className="kpi-card"><div className="kpi-icon healthy">₹</div><div className="kpi-data"><span className="kpi-val">₹{stats.completedBilling}</span><span className="kpi-label">Revenue</span></div></div>
       </div>
     </div>
   );
 };
 
 export const Vehicles = ({ token }) => {
-  const [vehicles, setVehicles] = useState([]); const [users, setUsers] = useState([]);
-  const [formData, setFormData] = useState({ makeAndModel: '', licensePlate: '', color: '', currentOdometer: '', ownerId: '' });
+  const [vehicles, setVehicles] = React.useState([]);
+  const [formData, setFormData] = React.useState({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', currentOdometer: '' });
 
-  const fetchData = () => {
-    const headers = { 'Authorization': `Bearer ${token}` };
-    fetch('/api/vehicles', { headers }).then(r => r.json()).then(setVehicles);
-    fetch('/api/admin/users', { headers }).then(r => r.json()).then(setUsers);
+  const fetchData = async () => {
+    try {
+      const res = await fetch('/api/vehicles', { headers: { 'Authorization': 'Bearer ' + token } });
+      if(res.ok) {
+         const data = await res.json();
+         setVehicles(Array.isArray(data) ? data : []); 
+      }
+    } catch(e) { console.error(e); }
   };
-  useEffect(() => { fetchData(); }, [token]);
+
+  React.useEffect(() => { fetchData(); }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch('/api/vehicles', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({...formData, currentOdometer: Number(formData.currentOdometer)}) });
-    setFormData({ makeAndModel: '', licensePlate: '', color: '', currentOdometer: '', ownerId: '' });
-    fetchData();
+    try {
+      const payload = { ...formData, currentOdometer: Number(formData.currentOdometer) };
+      const res = await fetch('/api/vehicles', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(payload) });
+      if(res.ok) {
+        fetchData();
+        setFormData({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', currentOdometer: '' });
+      } else {
+        alert("Error registering vehicle");
+      }
+    } catch(e) { console.error(e); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this vehicle?")) return;
-    const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.ok) fetchData(); else alert(await res.text());
+    if(!window.confirm('Delete vehicle?')) return;
+    try {
+      const res = await fetch('/api/vehicles/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.ok) fetchData();
+    } catch(e) { console.error(e); }
   };
 
   return (
     <div>
-      <div className="page-header"><h1>Vehicles Registry</h1></div>
+      <div className="page-header"><h1>🚛 Vehicles Dashboard</h1></div>
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
+        
         <div className="data-card" style={{ padding: '20px' }}>
           <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px', fontSize:'1.1em'}}>Register Vehicle</h2>
-          <form onSubmit={handleSubmit} style={{padding:0, gap:'12px'}}>
-            <div className="input-group"><label>Owner / Driver</label><select value={formData.ownerId} onChange={e => setFormData({...formData, ownerId: e.target.value})} required><option value="">Select Owner</option>{users.map(u => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select></div>
-            <div className="input-group"><label>Make & Model</label><input placeholder="e.g. Bajaj Platina 2017" value={formData.makeAndModel} onChange={e => setFormData({...formData, makeAndModel: e.target.value})} required /></div>
-            <div className="input-group"><label>License Plate</label><input placeholder="e.g. MH-15-AB-1234" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value})} required /></div>
-            <div className="input-group"><label>Color</label><input placeholder="e.g. matt red" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} required /></div>
-            <div className="input-group"><label>Current Odometer (km)</label><input type="number" placeholder="e.g. 15000" value={formData.currentOdometer} onChange={e => setFormData({...formData, currentOdometer: e.target.value})} required /></div>
-            <button type="submit" className="primary" style={{marginTop:'10px'}}>Register Vehicle</button>
+          <form onSubmit={handleSubmit} style={{padding:0, gap:'12px', display:'flex', flexDirection:'column'}}>
+            <div className="input-group"><label>Owner Name</label><input placeholder="e.g. Rahul Sharma" value={formData.ownerName} onChange={e => setFormData({...formData, ownerName: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Owner Phone</label><input placeholder="e.g. 9876543210" value={formData.ownerPhone} onChange={e => setFormData({...formData, ownerPhone: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Make & Model</label><input placeholder="e.g. Yamaha FZ-X" value={formData.makeAndModel} onChange={e => setFormData({...formData, makeAndModel: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>License Plate</label><input placeholder="e.g. MH-15-AB-1234" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Color</label><input placeholder="e.g. Matt Copper" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Current Odometer</label><input type="number" placeholder="e.g. 15000" value={formData.currentOdometer} onChange={e => setFormData({...formData, currentOdometer: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <button type="submit" className="primary" style={{marginTop:'10px', padding:'12px'}}>Register Vehicle</button>
           </form>
         </div>
+
         <div className="data-card">
-          <table><thead><tr><th>ID</th><th>License Plate</th><th>Model</th><th>Color</th><th>Owner</th><th>Odometer</th><th>Action</th></tr></thead>
-          <tbody>{vehicles.map(v => <tr key={v.id}><td>#{v.id}</td><td style={{fontWeight:'bold'}}>{v.licensePlate}</td><td>{v.makeAndModel}</td><td>{v.color}</td><td>{v.owner?.fullName}</td><td>{v.currentOdometer} km</td>
-          <td><button onClick={() => handleDelete(v.id)} style={{background:'#ef4444', color:'#fff', border:'none', padding:'6px 10px', borderRadius:'4px', cursor:'pointer', fontSize:'0.8em', fontWeight:'bold'}}>Delete</button></td>
-          </tr>)}</tbody></table>
+          <h2 style={{marginTop:0, marginBottom:'20px', color:'#ffd700'}}>Registered Vehicles Directory</h2>
+          <table style={{width:'100%', textAlign:'left', borderCollapse:'collapse'}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid rgba(212, 175, 55, 0.4)'}}>
+                <th style={{padding:'12px', color:'#ffd700'}}>License Plate</th>
+                <th style={{padding:'12px', color:'#ffd700'}}>Model & Color</th>
+                <th style={{padding:'12px', color:'#ffd700'}}>Owner Name</th>
+                <th style={{padding:'12px', color:'#ffd700'}}>Phone</th>
+                <th style={{padding:'12px', color:'#ffd700'}}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vehicles.length === 0 ? <tr><td colSpan="5" style={{padding:'20px', textAlign:'center', color:'#888'}}>No vehicles registered yet.</td></tr> : null}
+              {vehicles.map(v => (
+                <tr key={v.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <td style={{padding:'12px', fontWeight:'bold'}}>{v.licensePlate}</td>
+                  <td style={{padding:'12px'}}>{v.makeAndModel} ({v.color})</td>
+                  <td style={{padding:'12px'}}>{v.ownerName || "N/A"}</td>
+                  <td style={{padding:'12px'}}>{v.ownerPhone || "N/A"}</td>
+                  <td style={{padding:'12px'}}><button onClick={() => handleDelete(v.id)} style={{background:'#ef4444', color:'#fff', border:'none', padding:'6px 12px', borderRadius:'4px', cursor:'pointer'}}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -108,60 +145,160 @@ export const Alerts = ({ token }) => {
 };
 
 export const Maintenance = ({ token }) => {
-  const [users, setUsers] = useState([]); const [vehicles, setVehicles] = useState([]); const [mechanics, setMechanics] = useState([]);
-  const [tickets, setTickets] = useState([]);
-  const [formData, setFormData] = useState({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+  const [users, setUsers] = React.useState([]); 
+  const [vehicles, setVehicles] = React.useState([]); 
+  const [mechanics, setMechanics] = React.useState([]);
+  const [tickets, setTickets] = React.useState([]);
+  const [parts, setParts] = React.useState([]);
+  const [selectedPartId, setSelectedPartId] = React.useState('');
+  
+  const [formData, setFormData] = React.useState({ 
+    customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null 
+  });
 
   const fetchAllData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
-    const [uRes, vRes, mRes, tRes] = await Promise.all([ fetch('/api/admin/users', { headers }), fetch('/api/vehicles', { headers }), fetch('/api/mechanics', { headers }), fetch('/api/services', { headers }) ]);
-    if(uRes.ok) setUsers(await uRes.json()); if(vRes.ok) setVehicles(await vRes.json()); if(mRes.ok) setMechanics(await mRes.json()); if(tRes.ok) setTickets(await tRes.json());
+    const [uRes, vRes, mRes, tRes, pRes] = await Promise.all([ 
+      fetch('/api/admin/users', { headers }), 
+      fetch('/api/vehicles', { headers }), 
+      fetch('/api/mechanics', { headers }), 
+      fetch('/api/services', { headers }),
+      fetch('/api/inventory', { headers })
+    ]);
+    if(uRes.ok) setUsers(await uRes.json()); 
+    if(vRes.ok) setVehicles(await vRes.json()); 
+    if(mRes.ok) setMechanics(await mRes.json()); 
+    if(tRes.ok) setTickets(await tRes.json());
+    if(pRes.ok) setParts(await pRes.json());
   };
-  useEffect(() => { fetchAllData(); }, [token]);
 
-  const handleSubmit = async (e) => {
+  React.useEffect(() => { fetchAllData(); }, [token]);
+
+  const handleCreateTicket = async (e) => {
     e.preventDefault();
-    const dataToSend = new FormData();
-    Object.keys(formData).forEach(key => { if (formData[key]) dataToSend.append(key, formData[key]); });
-    await fetch('/api/services', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: dataToSend });
-    setFormData({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
-    fetchAllData();
+    const res = await fetch('/api/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(formData)
+    });
+    if(res.ok) {
+      alert("Service ticket successfully created!");
+      setFormData({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+      fetchAllData();
+    } else {
+      alert("Error creating ticket");
+    }
   };
 
-  const handleUpdateStatus = async (id, status) => {
-    await fetch(`/api/services/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'text/plain', 'Authorization': `Bearer ${token}` }, body: status });
-    fetchAllData();
+  const handleAttachPart = async (e) => {
+    e.preventDefault();
+    if (!selectedPartId) return;
+
+    const res = await fetch(`/api/inventory/${selectedPartId}/use?quantity=1`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      alert("Part attached to service and deducted from vault!");
+      fetchAllData(); 
+      setSelectedPartId('');
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
   };
-  const availableVehicles = formData.customerId ? vehicles.filter(v => v.owner?.id === Number(formData.customerId)) : [];
-  const displayedTickets = tickets.filter(t => t.status !== 'Completed').sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
 
   return (
     <div>
       <div className="page-header"><h1>🔧 Maintenance Operations</h1></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
-        <div className="data-card" style={{ padding: '20px' }}>
-          <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px', fontSize:'1.1em'}}>Book a New Service</h2>
-          <form onSubmit={handleSubmit} style={{padding:0, gap:'12px'}}>
-            <div className="input-group"><label>Customer</label><select name="customerId" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value, vehicleId: ''})} required><option value="">Select Customer</option>{users.map(u => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select></div>
-            <div className="input-group"><label>Vehicle</label><select name="vehicleId" value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required disabled={!formData.customerId}><option value="">{!formData.customerId ? 'Select Customer First' : 'Select Vehicle'}</option>{availableVehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}</select></div>
-            <div className="input-group"><label>Technician</label><select name="mechanicId" value={formData.mechanicId} onChange={e => setFormData({...formData, mechanicId: e.target.value})}><option value="">Any Available</option>{mechanics.map(m => <option key={m.id} value={m.id}>{m.name} ({m.specialization})</option>)}</select></div>
-            <div className="input-group"><label>Service Type</label><input name="serviceType" placeholder="e.g. Engine Diagnostics" value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} required /></div>
-            <div className="input-group"><label>Preferred Date</label><input type="date" name="appointmentDate" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required /></div>
-            <button type="submit" className="primary" style={{marginTop:'10px'}}>Create Booking</button>
-          </form>
+      
+      <div className="data-card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Service Bay & Inventory Control</h2>
+        
+        {/* Service Ticket Form */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+            <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Schedule New Service Ticket</h3>
+            <form onSubmit={handleCreateTicket} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <select value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
+                <option value="">-- Select Customer / User --</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+              </select>
+
+              <select value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
+                <option value="">-- Select Vehicle --</option>
+                {vehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}
+              </select>
+
+              <select value={formData.mechanicId} onChange={e => setFormData({...formData, mechanicId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
+                <option value="">-- Select Assigned Mechanic --</option>
+                {mechanics.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+
+              <input placeholder="Service Type (e.g. Oil Change)" value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+              
+              <input type="date" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+              
+              <input placeholder="Aftermarket Mods (if any)" value={formData.aftermarketMods} onChange={e => setFormData({...formData, aftermarketMods: e.target.value})} style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+
+              <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px', marginTop: '8px'}}>Create Service Ticket</button>
+            </form>
         </div>
-        <div className="data-card">
-          <table><thead><tr><th>Order ID</th><th>Customer</th><th>Vehicle</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>{displayedTickets.map(t => (
-            <tr key={t.id}><td>#{t.id}</td><td>{t.customer.fullName}</td><td><div style={{fontWeight:'bold'}}>{t.vehicle.licensePlate}</div></td><td>{t.serviceType}</td><td><span className={`badge ${t.status==='Pending'?'warning':'healthy'}`}>{t.status}</span></td>
-              <td>
-                <div style={{display:'flex', gap:'8px'}}>
-                  {t.status === 'Pending' && <button onClick={() => handleUpdateStatus(t.id, 'In-Progress')} style={{background:'#3b82f6', color:'white', border:'none', padding:'6px 12px', borderRadius:'4px', cursor:'pointer'}}>Start</button>}
-                  {t.status === 'In-Progress' && <button onClick={() => handleUpdateStatus(t.id, 'Completed')} style={{background:'#10b981', color:'white', border:'none', padding:'6px 12px', borderRadius:'4px', cursor:'pointer'}}>Complete</button>}
-                </div>
-              </td>
-            </tr>
-          ))}</tbody></table>
+
+        {/* Smart Parts Vault Integration */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+            <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Attach Parts to Active Job (Deducts from Vault)</h3>
+            <form onSubmit={handleAttachPart} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <select 
+                value={selectedPartId} 
+                onChange={e => setSelectedPartId(e.target.value)} 
+                style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}
+              >
+                <option value="">-- Select Part from Vault --</option>
+                {parts.map(p => (
+                  <option key={p.id} value={p.id} disabled={p.stockLevel === 0}>
+                    {p.partName} ({p.stockLevel} in stock) - ₹{p.price.toFixed(2)}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="primary" style={{padding: '12px 24px'}}>Use Part</button>
+            </form>
+        </div>
+
+        {/* Active Service Queue Table */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
+            <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Active Service Queue</h3>
+            {tickets.length === 0 ? (
+                <p style={{ color: 'gray', fontStyle: 'italic' }}>No active service tickets found.</p>
+            ) : (
+                <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginTop: '10px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Service Type</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Appointment</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Status</th>
+                      <th style={{padding: '12px', color: '#ffd700', textAlign: 'right'}}>Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tickets.map(t => (
+                      <tr key={t.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{padding: '12px'}}>{t.serviceType}</td>
+                        <td style={{padding: '12px'}}>{t.appointmentDate}</td>
+                        <td style={{padding: '12px'}}><span className="badge">Active</span></td>
+                        <td style={{padding: '12px', textAlign: 'right'}}>
+                          <button 
+                            onClick={() => window.open(`/api/invoices/${t.id}`, '_blank')}
+                            style={{ background: '#ffd700', color: '#000', padding: '6px 12px', fontSize: '12px', boxShadow: 'none' }}
+                          >
+                            📄 Download PDF
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+            )}
         </div>
       </div>
     </div>
@@ -171,62 +308,26 @@ export const Maintenance = ({ token }) => {
 export const Reports = () => ( <div><div className="page-header"><h1>Reports</h1></div><div className="data-card" style={{padding:'40px', textAlign:'center', color:'#94a3b8'}}><h2>Service Reports</h2></div></div> );
 export const Geofences = () => ( <div><div className="page-header"><h1>Geofences</h1></div><div className="data-card" style={{padding:'40px', textAlign:'center', color:'#94a3b8'}}><h2>GPS Module</h2></div></div> );
 
-export const Drivers = ({ token }) => {
-  const [users, setUsers] = useState([]);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
-
-  const fetchUsers = () => fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setUsers);
-  useEffect(() => { fetchUsers(); }, [token]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
-    setFormData({ fullName: '', email: '', phone: '' });
-    fetchUsers();
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this driver?")) return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.ok) fetchUsers(); else alert(await res.text());
-  };
-
-  return (
-    <div>
-      <div className="page-header"><h1>Drivers / Customers</h1></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
-        <div className="data-card" style={{ padding: '20px' }}>
-          <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px', fontSize:'1.1em'}}>Register Driver</h2>
-          <form onSubmit={handleSubmit} style={{padding:0, gap:'12px'}}>
-            <div className="input-group"><label>Full Name</label><input placeholder="e.g. Rahul Sharma" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} required /></div>
-            <div className="input-group"><label>Email Address</label><input type="email" placeholder="e.g. rahul@example.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required /></div>
-            <div className="input-group"><label>Phone Number</label><input placeholder="e.g. 9876543210" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required /></div>
-            <button type="submit" className="primary" style={{marginTop:'10px'}}>Register Driver</button>
-          </form>
-        </div>
-        <div className="data-card">
-          <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Action</th></tr></thead>
-          <tbody>{users.map(u => <tr key={u.id}><td>#{u.id}</td><td style={{fontWeight:'bold'}}>{u.fullName}</td><td>{u.email}</td><td>{u.phone}</td>
-          <td><button onClick={() => handleDelete(u.id)} style={{background:'#ef4444', color:'#fff', border:'none', padding:'6px 10px', borderRadius:'4px', cursor:'pointer', fontSize:'0.8em', fontWeight:'bold'}}>Delete</button></td>
-          </tr>)}</tbody></table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const Settings = ({ token }) => {
   const [users, setUsers] = React.useState([]);
   const [newUsername, setNewUsername] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [newRole, setNewRole] = React.useState('MECHANIC');
 
-  const fetchUsers = async () => {
-    const res = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-    if(res.ok) setUsers(await res.json());
+  const [mechanics, setMechanics] = React.useState([]);
+  const [mechName, setMechName] = React.useState('');
+  const [mechPhone, setMechPhone] = React.useState('');
+
+  const fetchData = async () => {
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const uRes = await fetch('/api/admin/users', { headers });
+    if(uRes.ok) setUsers(await uRes.json());
+
+    const mRes = await fetch('/api/mechanics', { headers });
+    if(mRes.ok) setMechanics(await mRes.json());
   };
 
-  React.useEffect(() => { fetchUsers(); }, []);
+  React.useEffect(() => { fetchData(); }, []);
 
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -236,13 +337,28 @@ export const Settings = ({ token }) => {
       body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole })
     });
     if(res.ok) {
-      setNewUsername(''); setNewPassword(''); fetchUsers();
+      setNewUsername(''); setNewPassword(''); fetchData();
     } else {
       const data = await res.json(); alert(data.error);
     }
   };
 
-  const handleDelete = async (id, username) => {
+  const handleAddMechanic = async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/mechanics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: mechName, phoneNumber: mechPhone })
+    });
+    if(res.ok) {
+      setMechName(''); setMechPhone(''); fetchData();
+      alert("Mechanic registered successfully!");
+    } else {
+      const errText = await res.text(); alert("Failed: " + errText);
+    }
+  };
+
+  const handleDeleteUser = async (id, username) => {
     if(username.toLowerCase() === 'admin') return alert("Access Denied: Cannot delete Master Admin.");
     if(!window.confirm(`Are you sure you want to revoke access for ${username}?`)) return;
     
@@ -250,29 +366,25 @@ export const Settings = ({ token }) => {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    if(res.ok) fetchUsers();
-    else { const data = await res.json(); alert(data.error); }
+    if(res.ok) fetchData();
   };
 
   return (
     <div>
       <div className="page-header"><h1>⚙️ Command Center Settings</h1></div>
       
-      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '24px' }}>
         <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Access Control & Identity</h2>
-        
-        {/* Add User Form */}
-        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
-          <input placeholder="New Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
-          <input type="password" placeholder="Secure Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
-          <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700'}}>
+        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <input placeholder="New Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+          <input type="password" placeholder="Secure Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+          <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
             <option value="MECHANIC">Mechanic Level</option>
             <option value="MANAGER">Manager Level</option>
           </select>
           <button type="submit" className="primary" style={{padding: '12px 24px'}}>Grant Access</button>
         </form>
 
-        {/* Active Users Table */}
         <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
@@ -288,11 +400,37 @@ export const Settings = ({ token }) => {
                 <td style={{padding: '16px'}}><span className="badge">{u.role}</span></td>
                 <td style={{padding: '16px', textAlign: 'right'}}>
                   {u.username.toLowerCase() !== 'admin' ? (
-                    <button onClick={() => handleDelete(u.id, u.username)} style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', boxShadow: 'none' }}>Revoke</button>
+                    <button onClick={() => handleDeleteUser(u.id, u.username)} style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', boxShadow: 'none' }}>Revoke</button>
                   ) : (
                     <span style={{ color: '#d4af37', fontStyle: 'italic' }}>Master Admin (Protected)</span>
                   )}
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Mechanic Bay Registry</h2>
+        <form onSubmit={handleAddMechanic} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <input placeholder="Mechanic Name" value={mechName} onChange={e => setMechName(e.target.value)} required style={{flex: 2, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+          <input placeholder="Phone Number" value={mechPhone} onChange={e => setMechPhone(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Add Mechanic</button>
+        </form>
+
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
+              <th style={{padding: '16px', color: '#ffd700'}}>Mechanic Name</th>
+              <th style={{padding: '16px', color: '#ffd700'}}>Phone Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mechanics.map(m => (
+              <tr key={m.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <td style={{padding: '16px', fontWeight: 'bold'}}>{m.name}</td>
+                <td style={{padding: '16px'}}>{m.phoneNumber}</td>
               </tr>
             ))}
           </tbody>
@@ -307,10 +445,49 @@ export const GateScanner = ({ token }) => {
   const [scanResult, setScanResult] = React.useState(null);
   const [error, setError] = React.useState(null);
   const [isScanning, setIsScanning] = React.useState(false);
+  const [scannedPlate, setScannedPlate] = React.useState('');
+  const [serviceHistory, setServiceHistory] = React.useState([]);
+  const [manualPlate, setManualPlate] = React.useState('');
+  
+  // Database-backed Scanner History
+  const [scannerHistory, setScannerHistory] = React.useState([]);
+
+  const fetchScanHistory = async () => {
+    try {
+      const res = await fetch('/api/alpr/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setScannerHistory(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchScanHistory();
+  }, [token]);
+
+  const fetchServicePassport = async (plate) => {
+    setScannedPlate(plate);
+    try {
+      const histRes = await fetch(`/api/service-history/${plate}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (histRes.ok) {
+        setServiceHistory(await histRes.json());
+      } else {
+        setServiceHistory([]);
+      }
+    } catch (e) {
+      setServiceHistory([]);
+    }
+  };
 
   const captureAndScan = async () => {
-    setIsScanning(true); setError(null); setScanResult(null);
-    const imageSrc = webcamRef.current.getScreenshot();
+    setIsScanning(true); setError(null); setScanResult(null); setScannedPlate(''); setServiceHistory([]);
+    const imageSrc = webcamRef.current ? webcamRef.current.getScreenshot() : null;
     
     try {
       const response = await fetch('/api/alpr/scan', {
@@ -320,43 +497,219 @@ export const GateScanner = ({ token }) => {
       });
       
       const data = await response.json();
-      if (response.ok) { setScanResult(data); } 
+      if (response.ok) { 
+        setScanResult(data); 
+        fetchServicePassport(data.licensePlate);
+        fetchScanHistory(); // Refresh DB history table
+      } 
       else { setError(data.error); }
     } catch (err) {
-      setError("Network or server connection failed.");
+      setError("Server connection failed. Please ensure Spring Boot is running.");
     } finally {
       setIsScanning(false);
     }
   };
 
+  const handleManualLookup = async (e) => {
+    e.preventDefault();
+    if (!manualPlate.trim()) return;
+    setError(null);
+
+    try {
+      const response = await fetch('/api/alpr/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ imageBase64: 'MANUAL', manualPlate: manualPlate.trim() })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setScanResult(data);
+        fetchServicePassport(data.licensePlate);
+        fetchScanHistory();
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError("Manual lookup failed.");
+    }
+    setManualPlate('');
+  };
+
+  return (
+    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <div className="page-header"><h1>👁 Automated Gate Scanner & History</h1><div className="live-indicator"><div className="live-dot"></div> ALPR Active</div></div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        
+        {/* Left Column: Webcam & Scanner */}
+        <div className="data-card" style={{ padding: '20px' }}>
+          <h3 style={{ marginTop: 0, color: '#ffd700' }}>Live Optical Feed (All Plates)</h3>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" style={{ width: '100%', display: 'block' }} />
+          </div>
+          
+          <button onClick={captureAndScan} className="primary" style={{ width: '100%', marginTop: '15px', padding: '14px', fontSize: '1.05em' }} disabled={isScanning}>
+            {isScanning ? 'Processing Telemetry...' : 'Engage Gate Scanner'}
+          </button>
+
+          {/* Manual Plate Fallback Search */}
+          <form onSubmit={handleManualLookup} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+            <input 
+              placeholder="Scan or type any plate (e.g. DL-01-AB-9999)" 
+              value={manualPlate} 
+              onChange={e => setManualPlate(e.target.value)} 
+              style={{ flex: 1, padding: '10px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '8px' }} 
+            />
+            <button type="submit" style={{ padding: '10px 16px', background: '#d4af37', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              Scan / Lookup
+            </button>
+          </form>
+
+          {scanResult && (
+            <div style={{ marginTop: '15px', padding: '14px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 6px 0', color: '#10b981' }}>Scanned Plate: {scanResult.licensePlate}</h4>
+              <p style={{ margin: '2px 0', color: '#e2e8f0', fontSize: '13px' }}>Owner: {scanResult.ownerName}</p>
+              <p style={{ margin: '2px 0', color: '#e2e8f0', fontSize: '13px' }}>Status: {scanResult.status}</p>
+              <span className="badge healthy" style={{marginTop:'8px', display:'inline-block'}}>Gate Logged</span>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ marginTop: '15px', padding: '14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 6px 0', color: '#ef4444' }}>Scan Error</h4>
+              <p style={{ margin: 0, color: '#e2e8f0', fontSize: '13px' }}>{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Database-Backed Scanner History */}
+        <div className="data-card" style={{ padding: '20px' }}>
+          <h3 style={{ marginTop: 0, color: '#ffd700' }}>📋 Scanner History (All Scans)</h3>
+          {scannerHistory.length === 0 ? (
+            <p style={{ color: '#888', fontStyle: 'italic', marginTop: '20px' }}>No plates scanned yet.</p>
+          ) : (
+            <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+              <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
+                    <th style={{ padding: '8px', color: '#ffd700' }}>Plate</th>
+                    <th style={{ padding: '8px', color: '#ffd700' }}>Time</th>
+                    <th style={{ padding: '8px', color: '#ffd700' }}>Status</th>
+                    <th style={{ padding: '8px', color: '#ffd700' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scannerHistory.map((hist) => (
+                    <tr key={hist.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <td style={{ padding: '8px', fontWeight: 'bold', color: '#fff' }}>{hist.licensePlate}</td>
+                      <td style={{ padding: '8px', color: '#aaa' }}>{hist.scanTime}</td>
+                      <td style={{ padding: '8px' }}>
+                        <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: hist.status === 'AUTHORIZED' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: hist.status === 'AUTHORIZED' ? '#10b981' : '#ef4444' }}>
+                          {hist.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <button 
+                          onClick={() => fetchServicePassport(hist.licensePlate)}
+                          style={{ background: '#d4af37', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                        >
+                          Passport
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* --- DIGITAL SERVICE PASSPORT TIMELINE WIDGET --- */}
+      {scannedPlate && (
+        <div style={{ marginTop: '20px', padding: '20px', background: '#121212', border: '1px solid #d4af37', borderRadius: '8px' }}>
+          <h3 style={{ color: '#d4af37', marginBottom: '15px' }}>📜 Digital Service Passport: {scannedPlate}</h3>
+          {serviceHistory.length === 0 ? (
+            <p style={{ color: '#888' }}>No recorded service history found for this vehicle. Unregistered visitor logs are active!</p>
+          ) : (
+            <div style={{ borderLeft: '2px solid #d4af37', paddingLeft: '20px', marginLeft: '10px' }}>
+              {serviceHistory.map((item, index) => (
+                <div key={index} style={{ position: 'relative', marginBottom: '20px' }}>
+                  <div style={{ position: 'absolute', left: '-27px', top: '4px', width: '12px', height: '12px', borderRadius: '50%', background: '#d4af37', boxShadow: '0 0 8px #d4af37' }} />
+                  <span style={{ fontSize: '12px', color: '#d4af37' }}>{item.serviceDate}</span>
+                  <h4 style={{ color: '#fff', margin: '4px 0' }}>{item.serviceType}</h4>
+                  <p style={{ color: '#ccc', fontSize: '14px', margin: '0' }}>{item.description}</p>
+                  <span style={{ fontSize: '12px', color: '#00ffcc' }}>Cost: ₹{item.cost}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const Inventory = ({ token }) => {
+  const [parts, setParts] = React.useState([]);
+  const [name, setName] = React.useState('');
+  const [stock, setStock] = React.useState('');
+  const [price, setPrice] = React.useState('');
+
+  const fetchParts = async () => {
+    const res = await fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
+    if(res.ok) setParts(await res.json());
+  };
+  React.useEffect(() => { fetchParts(); }, []);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    await fetch('/api/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ partName: name, stockLevel: parseInt(stock), warningLevel: 5, price: parseFloat(price) })
+    });
+    setName(''); setStock(''); setPrice(''); fetchParts();
+  };
+
   return (
     <div>
-      <div className="page-header"><h1>👁 Automated Gate Scanner</h1><div className="live-indicator"><div className="live-dot"></div> ALPR Active</div></div>
-      <div className="data-card" style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" style={{ width: '100%', display: 'block' }} />
-          <div style={{ position: 'absolute', top: '25%', left: '15%', width: '70%', height: '50%', border: '2px solid #ffd700', boxShadow: '0 0 15px #ffd700', background: isScanning ? 'rgba(255, 215, 0, 0.2)' : 'transparent', transition: 'background 0.3s' }} />
-        </div>
-        
-        <button onClick={captureAndScan} className="primary" style={{ width: '100%', marginTop: '20px', padding: '16px', fontSize: '1.1em' }} disabled={isScanning}>
-          {isScanning ? 'Processing Optical Telemetry...' : 'Engage Gate Scanner'}
-        </button>
+      <div className="page-header"><h1>📦 Smart Parts Vault</h1></div>
+      <div className="data-card">
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <input placeholder="Part Name (e.g. Brake Pads)" value={name} onChange={e => setName(e.target.value)} required style={{flex: 2, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
+          <input type="number" placeholder="Stock Level" value={stock} onChange={e => setStock(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
+          <input type="number" placeholder="Price (₹)" value={price} step="0.01" onChange={e => setPrice(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
+          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Add to Vault</button>
+        </form>
 
-        {scanResult && (
-          <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: '#10b981' }}>Vehicle Identified: {scanResult.licensePlate}</h3>
-            <p style={{ margin: '4px 0', color: '#e2e8f0' }}>Owner: {scanResult.ownerName}</p>
-            <p style={{ margin: '4px 0', color: '#e2e8f0' }}>Triage Ticket: <span style={{fontWeight:'bold'}}>{scanResult.ticketId}</span></p>
-            <div style={{marginTop:'12px'}}><span className="badge healthy">Gate Opened</span></div>
-          </div>
-        )}
-        
-        {error && (
-          <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: '#ef4444' }}>Scan Failed</h3>
-            <p style={{ margin: 0, color: '#e2e8f0' }}>{error}</p>
-          </div>
-        )}
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
+              <th style={{padding: '16px', color: '#ffd700'}}>Part Name</th>
+              <th style={{padding: '16px', color: '#ffd700'}}>Stock</th>
+              <th style={{padding: '16px', color: '#ffd700'}}>Price</th>
+              <th style={{padding: '16px', color: '#ffd700'}}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parts.map(p => (
+              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <td style={{padding: '16px'}}>{p.partName}</td>
+                <td style={{padding: '16px', fontWeight: 'bold'}}>{p.stockLevel}</td>
+                <td style={{padding: '16px'}}>₹{p.price.toFixed(2)}</td>
+                <td style={{padding: '16px'}}>
+                  {p.stockLevel <= p.warningLevel ? (
+                    <span style={{background: '#ef4444', color: '#fff', padding: '6px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold'}}>LOW STOCK</span>
+                  ) : (
+                    <span style={{background: 'rgba(212, 175, 55, 0.2)', color: '#ffd700', padding: '6px 12px', borderRadius: '50px', fontSize: '12px'}}>OPTIMAL</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

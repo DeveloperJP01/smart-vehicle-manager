@@ -14,7 +14,7 @@ public class ServiceTicketController {
     @DeleteMapping("/users/{id}") public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try { 
             // 1. Find all vehicles owned by this driver
-            List<Vehicle> vehicles = vehicleRepo.findAll().stream().filter(v -> v.getOwner().getId().equals(id)).collect(Collectors.toList());
+            List<Vehicle> vehicles = new java.util.ArrayList<>();
             for (Vehicle v : vehicles) {
                 // 2. Delete all tickets for each vehicle
                 List<ServiceTicket> tickets = ticketRepo.findAll().stream().filter(t -> t.getVehicle().getId().equals(v.getId())).collect(Collectors.toList());
@@ -29,12 +29,11 @@ public class ServiceTicketController {
     }
     
     @GetMapping("/vehicles") public List<Vehicle> getAllVehicles() { return vehicleRepo.findAll(); }
-    @PostMapping("/vehicles") public Vehicle createVehicle(@RequestBody VehicleRequest req) {
-        Vehicle v = new Vehicle(); v.setMakeAndModel(req.getMakeAndModel()); v.setLicensePlate(req.getLicensePlate()); v.setColor(req.getColor());
+    @PostMapping("/vehicles") public Vehicle createVehicle(@RequestBody Vehicle req) {
+        req.setId(null); // Ensure a new vehicle is created
         int odo = req.getCurrentOdometer() != null ? req.getCurrentOdometer() : 0;
-        v.setCurrentOdometer(odo); v.setLastOilOdometer(odo); v.setLastBrakeOdometer(odo); v.setLastTireOdometer(odo);
-        v.setOwner(userRepo.findById(req.getOwnerId()).orElseThrow());
-        return vehicleRepo.save(v);
+        req.setCurrentOdometer(odo); req.setLastOilOdometer(odo); req.setLastBrakeOdometer(odo); req.setLastTireOdometer(odo);
+        return vehicleRepo.save(req);
     }
     
     @DeleteMapping("/vehicles/{id}") public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
@@ -49,7 +48,6 @@ public class ServiceTicketController {
         catch (Exception e) { return ResponseEntity.badRequest().body("Failed to delete vehicle."); }
     }
     
-    @GetMapping("/mechanics") public List<Mechanic> getAllMechanics() { return mechanicRepo.findAll(); }
     @GetMapping("/services") public List<ServiceTicket> getAllTickets() { return ticketRepo.findAll(); }
 
     @PostMapping(value = "/services", consumes = {"multipart/form-data"})
