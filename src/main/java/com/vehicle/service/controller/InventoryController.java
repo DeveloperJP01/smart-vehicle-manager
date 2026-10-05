@@ -1,10 +1,11 @@
 package com.vehicle.service.controller;
 
-import com.vehicle.service.model.InventoryItem;
-import com.vehicle.service.repository.InventoryRepository;
+import com.vehicle.service.model.*;
+import com.vehicle.service.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
 
 import java.util.List;
 import java.util.Map;
@@ -13,8 +14,9 @@ import java.util.Map;
 @RequestMapping("/api/inventory")
 public class InventoryController {
     
-    @Autowired 
-    private InventoryRepository repo;
+    @Autowired private InventoryRepository repo;
+    @Autowired private PartOrderRepository orderRepo;
+    @Autowired private MerchantRepository merchantRepo;
 
     @GetMapping
     public List<InventoryItem> getAll() { 
@@ -26,19 +28,46 @@ public class InventoryController {
         return repo.save(item); 
     }
 
-    // NEW: Deduct parts when used in Maintenance
+    @Autowired private ServiceTicketRepository ticketRepo;
+
     @PostMapping("/{id}/use")
-    public ResponseEntity<?> usePart(@PathVariable Long id, @RequestParam int quantity) {
+    public ResponseEntity<?> usePart(@PathVariable Long id, @RequestParam int quantity, @RequestParam(required = false) Long ticketId) {
         InventoryItem item = repo.findById(id).orElse(null);
         if (item == null) return ResponseEntity.notFound().build();
-        
         if (item.getStockLevel() < quantity) {
             return ResponseEntity.badRequest().body(Map.of("error", "Not enough stock left in the Vault!"));
         }
-        
-        // Deduct the quantity and save
         item.setStockLevel(item.getStockLevel() - quantity);
         repo.save(item);
+
+        if (ticketId != null) {
+            ServiceTicket ticket = ticketRepo.findById(ticketId).orElse(null);
+            if (ticket != null) {
+                ticket.setEstimatedCost((ticket.getEstimatedCost() == null ? 0 : ticket.getEstimatedCost()) + (item.getPrice() * quantity));
+                ticketRepo.save(ticket);
+            }
+        }
         return ResponseEntity.ok(Map.of("message", "Part attached to service and deducted from vault."));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePart(@PathVariable Long id) {
+        repo.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/orders")
+    public List<PartOrder> getOrders() {
+        return orderRepo.findAll();
+    }
+
+    @PostMapping("/orders")
+    public ResponseEntity<?> orderParts(@RequestBody PartOrder order) {
+        order.setOrderDate(LocalDateTime.now());
+        if (order.getMerchant() != null && order.getMerchant().getId() != null) {
+            order.setMerchant(merchantRepo.findById(order.getMerchant().getId()).orElse(null));
+        }
+        orderRepo.save(order);
+        return ResponseEntity.ok(Map.of("message", "Order placed with merchant successfully."));
     }
 }

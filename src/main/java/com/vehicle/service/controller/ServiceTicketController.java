@@ -6,10 +6,17 @@ import java.io.IOException; import java.util.List; import java.util.stream.Colle
 @RestController @RequestMapping("/api")
 public class ServiceTicketController {
     @Autowired private ServiceTicketRepository ticketRepo; @Autowired private UserRepository userRepo;
-    @Autowired private VehicleRepository vehicleRepo;
+    @Autowired private VehicleRepository vehicleRepo; @Autowired private MechanicRepository mechanicRepo;
+
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @GetMapping("/users") public List<User> getAllUsers() { return userRepo.findAll(); }
-    @PostMapping("/users") public User createUser(@RequestBody User user) { return userRepo.save(user); }
+    @PostMapping("/users") public User createUser(@RequestBody User user) { 
+        if (user.getPassword() != null && !user.getPassword().startsWith("{")) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        return userRepo.save(user); 
+    }
     
     @DeleteMapping("/users/{id}") public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try { 
@@ -53,11 +60,29 @@ public class ServiceTicketController {
     @PostMapping(value = "/services", consumes = {"multipart/form-data"})
     public ServiceTicket createTicket(@ModelAttribute TicketRequest req) throws IOException {
         ServiceTicket ticket = new ServiceTicket();
-        ticket.setCustomer(userRepo.findById(req.getCustomerId()).orElseThrow());
-        ticket.setVehicle(vehicleRepo.findById(req.getVehicleId()).orElseThrow());
+        Vehicle vehicle = vehicleRepo.findById(req.getVehicleId()).orElseThrow();
+        ticket.setVehicle(vehicle);
+        
+        if (req.getCustomerId() != null) {
+            ticket.setCustomer(userRepo.findById(req.getCustomerId()).orElseThrow());
+        }
+
+        if (req.getMechanicId() != null) {
+            ticket.setAssignedMechanic(mechanicRepo.findById(req.getMechanicId()).orElse(null));
+        }
+
         ticket.setServiceType(req.getServiceType()); ticket.setAppointmentDate(req.getAppointmentDate());
+        ticket.setAppointmentTime(req.getAppointmentTime());
         ticket.setAftermarketMods(req.getAftermarketMods()); ticket.setStatus("Pending");
-        ticket.setEstimatedCost(Math.round((Math.random() * 4000 + 1000) * 100.0) / 100.0);
+        
+        double cost = 0.0;
+        if ("Minor service".equalsIgnoreCase(req.getServiceType())) cost = 468.0;
+        else if ("Half service".equalsIgnoreCase(req.getServiceType())) cost = 1075.0;
+        else if ("Major service".equalsIgnoreCase(req.getServiceType())) cost = 1652.0;
+        else if ("Full Service".equalsIgnoreCase(req.getServiceType())) cost = 2375.0;
+        else cost = Math.round((Math.random() * 4000 + 1000) * 100.0) / 100.0; // fallback
+
+        ticket.setEstimatedCost(cost);
         if (req.getReferencePhoto() != null && !req.getReferencePhoto().isEmpty()) ticket.setReferencePhoto(req.getReferencePhoto().getBytes());
         return ticketRepo.save(ticket);
     }
@@ -83,5 +108,21 @@ public class ServiceTicketController {
         if (ticket.getReferencePhoto() == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"photo_" + id + ".jpg\"")
             .contentType(MediaType.IMAGE_JPEG).body(ticket.getReferencePhoto());
+    }
+
+    @PutMapping("/services/{id}")
+    public ServiceTicket updateTicket(@PathVariable Long id, @RequestBody TicketRequest req) {
+        ServiceTicket ticket = ticketRepo.findById(id).orElseThrow();
+        if (req.getServiceType() != null) ticket.setServiceType(req.getServiceType());
+        if (req.getAppointmentDate() != null) ticket.setAppointmentDate(req.getAppointmentDate());
+        if (req.getAppointmentTime() != null) ticket.setAppointmentTime(req.getAppointmentTime());
+        if (req.getAftermarketMods() != null) ticket.setAftermarketMods(req.getAftermarketMods());
+        return ticketRepo.save(ticket);
+    }
+
+    @DeleteMapping("/services/{id}")
+    public ResponseEntity<?> deleteTicket(@PathVariable Long id) {
+        ticketRepo.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

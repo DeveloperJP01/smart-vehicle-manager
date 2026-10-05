@@ -45,18 +45,14 @@ export const Overview = ({ token }) => {
 
 export const Vehicles = ({ token }) => {
   const [vehicles, setVehicles] = React.useState([]);
-  const [formData, setFormData] = React.useState({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', currentOdometer: '' });
+  const [formData, setFormData] = React.useState({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', chassisNumber: '', engineNumber: '', currentOdometer: '' });
 
   const fetchData = async () => {
     try {
       const res = await fetch('/api/vehicles', { headers: { 'Authorization': 'Bearer ' + token } });
-      if(res.ok) {
-         const data = await res.json();
-         setVehicles(Array.isArray(data) ? data : []); 
-      }
+      if(res.ok) setVehicles(await res.json());
     } catch(e) { console.error(e); }
   };
-
   React.useEffect(() => { fetchData(); }, [token]);
 
   const handleSubmit = async (e) => {
@@ -66,7 +62,7 @@ export const Vehicles = ({ token }) => {
       const res = await fetch('/api/vehicles', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(payload) });
       if(res.ok) {
         fetchData();
-        setFormData({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', currentOdometer: '' });
+        setFormData({ ownerName: '', ownerPhone: '', makeAndModel: '', licensePlate: '', color: '', chassisNumber: '', engineNumber: '', currentOdometer: '' });
       } else {
         alert("Error registering vehicle");
       }
@@ -83,7 +79,7 @@ export const Vehicles = ({ token }) => {
 
   return (
     <div>
-      <div className="page-header"><h1>🚛 Vehicles Dashboard</h1></div>
+      <div className="page-header"><h1>🚘 Vehicles Dashboard</h1></div>
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
         
         <div className="data-card" style={{ padding: '20px' }}>
@@ -94,6 +90,8 @@ export const Vehicles = ({ token }) => {
             <div className="input-group"><label>Make & Model</label><input placeholder="e.g. Yamaha FZ-X" value={formData.makeAndModel} onChange={e => setFormData({...formData, makeAndModel: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
             <div className="input-group"><label>License Plate</label><input placeholder="e.g. MH-15-AB-1234" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
             <div className="input-group"><label>Color</label><input placeholder="e.g. Matt Copper" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Chassis Number (Optional)</label><input placeholder="e.g. VGS123456" value={formData.chassisNumber} onChange={e => setFormData({...formData, chassisNumber: e.target.value})} style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
+            <div className="input-group"><label>Engine Number (Optional)</label><input placeholder="e.g. ENG98765" value={formData.engineNumber} onChange={e => setFormData({...formData, engineNumber: e.target.value})} style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
             <div className="input-group"><label>Current Odometer</label><input type="number" placeholder="e.g. 15000" value={formData.currentOdometer} onChange={e => setFormData({...formData, currentOdometer: e.target.value})} required style={{padding:'10px', borderRadius:'6px', border:'1px solid #333', background:'#1a1a24', color:'#fff'}} /></div>
             <button type="submit" className="primary" style={{marginTop:'10px', padding:'12px'}}>Register Vehicle</button>
           </form>
@@ -106,17 +104,19 @@ export const Vehicles = ({ token }) => {
               <tr style={{borderBottom:'1px solid rgba(212, 175, 55, 0.4)'}}>
                 <th style={{padding:'12px', color:'#ffd700'}}>License Plate</th>
                 <th style={{padding:'12px', color:'#ffd700'}}>Model & Color</th>
+                <th style={{padding:'12px', color:'#ffd700'}}>Chassis / Engine</th>
                 <th style={{padding:'12px', color:'#ffd700'}}>Owner Name</th>
                 <th style={{padding:'12px', color:'#ffd700'}}>Phone</th>
                 <th style={{padding:'12px', color:'#ffd700'}}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {vehicles.length === 0 ? <tr><td colSpan="5" style={{padding:'20px', textAlign:'center', color:'#888'}}>No vehicles registered yet.</td></tr> : null}
+              {vehicles.length === 0 ? <tr><td colSpan="6" style={{padding:'20px', textAlign:'center', color:'#888'}}>No vehicles registered yet.</td></tr> : null}
               {vehicles.map(v => (
                 <tr key={v.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                   <td style={{padding:'12px', fontWeight:'bold'}}>{v.licensePlate}</td>
                   <td style={{padding:'12px'}}>{v.makeAndModel} ({v.color})</td>
+                  <td style={{padding:'12px'}}>{v.chassisNumber || 'N/A'} <br/> {v.engineNumber || 'N/A'}</td>
                   <td style={{padding:'12px'}}>{v.ownerName || "N/A"}</td>
                   <td style={{padding:'12px'}}>{v.ownerPhone || "N/A"}</td>
                   <td style={{padding:'12px'}}><button onClick={() => handleDelete(v.id)} style={{background:'#ef4444', color:'#fff', border:'none', padding:'6px 12px', borderRadius:'4px', cursor:'pointer'}}>Delete</button></td>
@@ -129,7 +129,6 @@ export const Vehicles = ({ token }) => {
     </div>
   );
 };
-
 export const SmartHealth = ({ token }) => {
   const [diagnostics, setDiagnostics] = useState([]);
   useEffect(() => { fetch('/api/diagnostics', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setDiagnostics); }, [token]);
@@ -157,56 +156,165 @@ export const SmartHealth = ({ token }) => {
 };
 
 export const Alerts = ({ token }) => {
-  const [alerts, setAlerts] = useState([]);
-  useEffect(() => { fetch('/api/diagnostics', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(data => setAlerts(data.filter(d => d.alerts.length > 0))); }, [token]);
+  const [alerts, setAlerts] = React.useState([]);
+  const [inventoryAlerts, setInventoryAlerts] = React.useState([]);
+
+  React.useEffect(() => { 
+    fetch('/api/diagnostics', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setAlerts(data.filter(d => d.alerts.length > 0))); 
+    
+    fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => setInventoryAlerts(data.filter(p => p.stockLevel < 10)));
+  }, [token]);
+
   return (
     <div>
-      <div className="page-header"><h1>Alerts Log</h1></div>
+      <div className="page-header"><h1>⚠️ Alerts Log</h1></div>
+      
+      {inventoryAlerts.length > 0 && (
+        <div className="data-card" style={{ marginBottom: '24px', border: '1px solid #ef4444' }}>
+          <h2 style={{marginTop: 0, color: '#ef4444'}}>Low Stock Alerts</h2>
+          <table>
+            <thead><tr><th>Part Name</th><th>Serial #</th><th>Current Stock</th><th>Action</th></tr></thead>
+            <tbody>
+              {inventoryAlerts.map((p, i) => (
+                <tr key={i}>
+                  <td>{p.partName}</td>
+                  <td>{p.serialNumber}</td>
+                  <td style={{color: '#ef4444', fontWeight: 'bold'}}>{p.stockLevel}</td>
+                  <td><span className="badge critical">RESTOCK REQUIRED</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="data-card">
-        <table><thead><tr><th>Vehicle</th><th>Severity</th><th>Alert Details</th></tr></thead>
-        <tbody>{alerts.map((a, i) => <tr key={i}><td>{a.vehicle.licensePlate}</td><td><span className={`badge ${a.status.toLowerCase()}`}>{a.status}</span></td><td>{a.alerts.join(', ')}</td></tr>)}</tbody></table>
+        <h2 style={{marginTop: 0}}>Diagnostic Alerts</h2>
+        <table>
+          <thead><tr><th>Vehicle</th><th>Severity</th><th>Alert Details</th></tr></thead>
+          <tbody>
+            {alerts.length === 0 && <tr><td colSpan="3" style={{textAlign: 'center', color: '#888', padding: '20px'}}>No diagnostic alerts active.</td></tr>}
+            {alerts.map((a, i) => (
+              <tr key={i}>
+                <td>{a.vehicle.licensePlate}</td>
+                <td><span className={`badge ${a.status.toLowerCase()}`}>{a.status}</span></td>
+                <td>{a.alerts.join(', ')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
-
-export const Maintenance = ({ token }) => {
-  const [users, setUsers] = React.useState([]); 
+export const Maintenance = ({ token, userRole }) => {
   const [vehicles, setVehicles] = React.useState([]); 
   const [tickets, setTickets] = React.useState([]);
   const [parts, setParts] = React.useState([]);
-  const [selectedPartId, setSelectedPartId] = React.useState('');
+  const [mechanics, setMechanics] = React.useState([]);
+  const [users, setUsers] = React.useState([]);
+  
+  const [searchTicket, setSearchTicket] = React.useState('');
+  const [searchPart, setSearchPart] = React.useState('');
+  const [partQuantity, setPartQuantity] = React.useState(1);
+  const [aftermarketMods, setAftermarketMods] = React.useState('');
   
   const [formData, setFormData] = React.useState({ 
-    customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null 
+    vehicleSearch: '', mechanicName: '', serviceType: '', appointmentDate: '', appointmentTime: '', referencePhoto: null 
   });
 
   const fetchAllData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
-    const [uRes, vRes, tRes, pRes] = await Promise.all([ 
-      fetch('/api/admin/users', { headers }), 
+    const [vRes, tRes, pRes, mRes, uRes] = await Promise.all([ 
       fetch('/api/vehicles', { headers }), 
       fetch('/api/services', { headers }),
-      fetch('/api/inventory', { headers })
+      fetch('/api/inventory', { headers }),
+      fetch('/api/registry/mechanics', { headers }),
+      fetch('/api/users', { headers })
     ]);
-    if(uRes.ok) setUsers(await uRes.json()); 
     if(vRes.ok) setVehicles(await vRes.json()); 
     if(tRes.ok) setTickets(await tRes.json());
     if(pRes.ok) setParts(await pRes.json());
+    if(mRes.ok) setMechanics(await mRes.json());
+    if(uRes.ok) setUsers(await uRes.json());
   };
 
   React.useEffect(() => { fetchAllData(); }, [token]);
 
+  const generatePDF = (ticket) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Service Ticket Invoice</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+            h1 { color: #d4af37; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
+            .info-section { margin-top: 20px; line-height: 1.6; }
+            .label { font-weight: bold; width: 150px; display: inline-block; }
+            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            th { background: #f4f4f4; }
+          </style>
+        </head>
+        <body>
+          <h1>AutoSense Service Invoice</h1>
+          <div class="info-section">
+            <div><span class="label">Ticket ID:</span>#${ticket.id}</div>
+            <div><span class="label">Date/Time:</span>${ticket.appointmentDate} ${ticket.appointmentTime || ''}</div>
+            <div><span class="label">Owner:</span>${ticket.customer?.username || ticket.customer?.ownerName || ticket.vehicle?.ownerName || 'Unknown'}</div>
+            <div><span class="label">Vehicle:</span>${ticket.vehicle?.makeAndModel} (${ticket.vehicle?.licensePlate})</div>
+            <div><span class="label">Odometer:</span>${ticket.vehicle?.currentOdometer || 0} km</div>
+            <div><span class="label">Mechanic:</span>${ticket.assignedMechanic?.name || 'Unassigned'}</div>
+            <div><span class="label">Service Type:</span>${ticket.serviceType}</div>
+            <div><span class="label">Mods:</span>${ticket.aftermarketMods || 'None'}</div>
+            <div><span class="label">Total Cost:</span>Rs. ${ticket.estimatedCost || 0}</div>
+            <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border: 1px solid #ffeeba;">
+              <span class="label">Next Service Due:</span> 
+              ${(ticket.vehicle?.currentOdometer || 0) + 5000} km (Recommended)
+            </div>
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleCreateTicket = async (e) => {
     e.preventDefault();
+    const selectedMech = mechanics.find(m => m.name === formData.mechanicName);
+    const mechId = selectedMech ? selectedMech.id : '';
+    
+    const selectedVehicle = vehicles.find(v => v.licensePlate === formData.vehicleSearch);
+    if (!selectedVehicle) {
+      alert("Please select a valid vehicle from the list.");
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append("vehicleId", selectedVehicle.id);
+    if (mechId) payload.append("mechanicId", mechId);
+    payload.append("serviceType", formData.serviceType);
+    payload.append("appointmentDate", formData.appointmentDate);
+    if(formData.appointmentTime) payload.append("appointmentTime", formData.appointmentTime);
+
     const res = await fetch('/api/services', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(formData)
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: payload
     });
     if(res.ok) {
+      const createdTicket = await res.json();
       alert("Service ticket successfully created!");
-      setFormData({ customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+      generatePDF(createdTicket);
+      setFormData({ vehicleSearch: '', mechanicName: '', serviceType: '', appointmentDate: '', appointmentTime: '', referencePhoto: null });
       fetchAllData();
     } else {
       alert("Error creating ticket");
@@ -215,20 +323,67 @@ export const Maintenance = ({ token }) => {
 
   const handleAttachPart = async (e) => {
     e.preventDefault();
-    if (!selectedPartId) return;
+    const t = tickets.find(t => `TKT-${t.id} - ${t.vehicle?.licensePlate}` === searchTicket);
+    const p = parts.find(part => `${part.partName} (${part.serialNumber})` === searchPart);
 
-    const res = await fetch(`/api/inventory/${selectedPartId}/use?quantity=1`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
+    if (!t) {
+      alert("Please select a valid ticket from the list.");
+      return;
+    }
+
+    // First update the aftermarket mods if provided
+    if (aftermarketMods) {
+      await fetch(`/api/services/${t.id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aftermarketMods: aftermarketMods })
+      });
+    }
+
+    if (p) {
+      const res = await fetch(`/api/inventory/${p.id}/use?quantity=${partQuantity}&ticketId=${t.id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error);
+        return;
+      }
+    }
+
+    alert("Active Job updated successfully!");
+    fetchAllData(); 
+    setSearchPart('');
+    setAftermarketMods('');
+  };
+
+  const handleDeleteTicket = async (id) => {
+    if (!window.confirm("Delete this ticket?")) return;
+    await fetch(`/api/services/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchAllData();
+  };
+
+  const handleCompleteTicket = async (id) => {
+    if (!window.confirm("Mark ticket as Completed?")) return;
+    await fetch(`/api/services/${id}/status`, { 
+      method: 'PUT', 
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'text/plain' },
+      body: "Completed"
     });
+    fetchAllData();
+  };
 
-    if (res.ok) {
-      alert("Part attached to service and deducted from vault!");
-      fetchAllData(); 
-      setSelectedPartId('');
-    } else {
-      const data = await res.json();
-      alert(data.error);
+  const handleEditTicket = async (t) => {
+    const newServiceType = window.prompt("Edit Service Type:", t.serviceType);
+    if (newServiceType) {
+      await fetch(`/api/services/${t.id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceType: newServiceType })
+      });
+      fetchAllData();
     }
   };
 
@@ -239,51 +394,65 @@ export const Maintenance = ({ token }) => {
       <div className="data-card" style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Service Bay & Inventory Control</h2>
         
-        {/* Service Ticket Form */}
         <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
             <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Schedule New Service Ticket</h3>
             <form onSubmit={handleCreateTicket} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <select value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
-                <option value="">-- Select Customer / User --</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+
+              <input list="vehicleList" placeholder="Search & Select Vehicle (License Plate)" value={formData.vehicleSearch} onChange={e => setFormData({...formData, vehicleSearch: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}} />
+              <datalist id="vehicleList">
+                {vehicles.map(v => <option key={v.id} value={v.licensePlate}>{v.makeAndModel}</option>)}
+              </datalist>
+
+              <input list="mechanicList" placeholder="Search & Select Mechanic" value={formData.mechanicName} onChange={e => setFormData({...formData, mechanicName: e.target.value})} style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}} />
+              <datalist id="mechanicList">
+                {mechanics.map(m => <option key={m.id} value={m.name} />)}
+              </datalist>
+
+              <select value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
+                <option value="">-- Select Service Type --</option>
+                <option value="Minor service">Minor service (Rs 468)</option>
+                <option value="Half service">Half service (Rs 1075)</option>
+                <option value="Major service">Major service (Rs 1652)</option>
+                <option value="Full Service">Full Service (Rs 2375)</option>
               </select>
-
-              <select value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
-                <option value="">-- Select Vehicle --</option>
-                {vehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}
-              </select>
-
-              <input placeholder="Service Type (e.g. Oil Change)" value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
               
-              <input type="date" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+              <div style={{display: 'flex', gap: '8px'}}>
+                <input type="date" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+                <input type="time" placeholder="Time (Optional)" value={formData.appointmentTime} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+              </div>
               
-              <input placeholder="Aftermarket Mods (if any)" value={formData.aftermarketMods} onChange={e => setFormData({...formData, aftermarketMods: e.target.value})} style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
-
-              <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px', marginTop: '8px'}}>Create Service Ticket</button>
+              <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px', marginTop: '8px'}}>Create Service Ticket & Print PDF</button>
             </form>
         </div>
 
-        {/* Smart Parts Vault Integration */}
         <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
-            <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Attach Parts to Active Job (Deducts from Vault)</h3>
-            <form onSubmit={handleAttachPart} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <select 
-                value={selectedPartId} 
-                onChange={e => setSelectedPartId(e.target.value)} 
-                style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}
-              >
-                <option value="">-- Select Part from Vault --</option>
-                {parts.map(p => (
-                  <option key={p.id} value={p.id} disabled={p.stockLevel === 0}>
-                    {p.partName} ({p.stockLevel} in stock) - ₹{p.price.toFixed(2)}
-                  </option>
+            <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Attach Parts to Active Job</h3>
+            <form onSubmit={handleAttachPart} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              
+              <input list="activeTickets" placeholder="Search & Select Active Ticket" value={searchTicket} onChange={e => setSearchTicket(e.target.value)} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}} />
+              <datalist id="activeTickets">
+                {tickets.filter(t => t.status !== 'Completed').map(t => (
+                  <option key={t.id} value={`TKT-${t.id} - ${t.vehicle?.licensePlate}`}>{t.serviceType}</option>
                 ))}
-              </select>
-              <button type="submit" className="primary" style={{padding: '12px 24px'}}>Use Part</button>
+              </datalist>
+
+              <input placeholder="Aftermarket Mods (if any)" value={aftermarketMods} onChange={e => setAftermarketMods(e.target.value)} style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+
+              <div style={{display: 'flex', gap: '8px', gridColumn: 'span 2'}}>
+                <input list="vaultParts" placeholder="Search & Select Part from Vault (Optional)" value={searchPart} onChange={e => setSearchPart(e.target.value)} style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}} />
+                <datalist id="vaultParts">
+                  {parts.filter(p => p.stockLevel > 0).map(p => (
+                    <option key={p.id} value={`${p.partName} (${p.serialNumber})`}>{p.stockLevel} in stock</option>
+                  ))}
+                </datalist>
+
+                <input type="number" min="1" value={partQuantity} onChange={e => setPartQuantity(parseInt(e.target.value))} style={{width: '70px', padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
+                <button type="submit" className="primary" style={{padding: '12px 24px'}}>Update Job</button>
+              </div>
+
             </form>
         </div>
 
-        {/* Active Service Queue Table */}
         <div style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
             <h3 style={{marginTop: 0, color: '#e8dcc5'}}>Active Service Queue</h3>
             {tickets.length === 0 ? (
@@ -292,25 +461,29 @@ export const Maintenance = ({ token }) => {
                 <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginTop: '10px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
-                      <th style={{padding: '12px', color: '#ffd700'}}>Service Type</th>
-                      <th style={{padding: '12px', color: '#ffd700'}}>Appointment</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>ID</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Vehicle</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Mechanic</th>
                       <th style={{padding: '12px', color: '#ffd700'}}>Status</th>
-                      <th style={{padding: '12px', color: '#ffd700', textAlign: 'right'}}>Invoice</th>
+                      <th style={{padding: '12px', color: '#ffd700'}}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tickets.map(t => (
-                      <tr key={t.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                        <td style={{padding: '12px'}}>{t.serviceType}</td>
-                        <td style={{padding: '12px'}}>{t.appointmentDate}</td>
-                        <td style={{padding: '12px'}}><span className="badge">Active</span></td>
-                        <td style={{padding: '12px', textAlign: 'right'}}>
-                          <button 
-                            onClick={() => window.open(`/api/invoices/${t.id}`, '_blank')}
-                            style={{ background: '#ffd700', color: '#000', padding: '6px 12px', fontSize: '12px', boxShadow: 'none' }}
-                          >
-                            📄 Download PDF
-                          </button>
+                      <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{padding: '12px', color: '#fff'}}>#{t.id}</td>
+                        <td style={{padding: '12px', color: '#ccc'}}>{t.vehicle?.licensePlate}<br/><small>{t.serviceType}</small></td>
+                        <td style={{padding: '12px', color: '#ccc'}}>{t.assignedMechanic?.name || 'Unassigned'}</td>
+                        <td style={{padding: '12px'}}>
+                          <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.8em', background: t.status === 'Completed' ? '#065f46' : '#92400e', color: '#fff' }}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td style={{padding: '12px', display: 'flex', gap: '5px'}}>
+                          {t.status !== 'Completed' && <button onClick={() => handleCompleteTicket(t.id)} style={{background: '#059669', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>Complete</button>}
+                          <button onClick={() => handleEditTicket(t)} style={{background: '#d97706', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>Edit</button>
+                          <button onClick={() => generatePDF(t)} style={{background: '#2563eb', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>PDF</button>
+                          {userRole === 'Owner' && <button onClick={() => handleDeleteTicket(t.id)} style={{background: '#dc2626', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'}}>Delete</button>}
                         </td>
                       </tr>
                     ))}
@@ -322,42 +495,105 @@ export const Maintenance = ({ token }) => {
     </div>
   );
 };
-
 export const Reports = ({ token }) => {
   const [tickets, setTickets] = React.useState([]);
+  const [vehicles, setVehicles] = React.useState([]);
+  const [searchVehicle, setSearchVehicle] = React.useState('');
+
+  const generatePDF = (ticket) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Service Ticket Invoice</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+            h1 { color: #d4af37; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
+            .info-section { margin-top: 20px; line-height: 1.6; }
+            .label { font-weight: bold; width: 150px; display: inline-block; }
+            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            th { background: #f4f4f4; }
+          </style>
+        </head>
+        <body>
+          <h1>AutoSense Service Invoice</h1>
+          <div class="info-section">
+            <div><span class="label">Ticket ID:</span>#${ticket.id}</div>
+            <div><span class="label">Date/Time:</span>${ticket.appointmentDate} ${ticket.appointmentTime || ''}</div>
+            <div><span class="label">Owner:</span>${ticket.customer?.username || ticket.customer?.ownerName || ticket.vehicle?.ownerName || 'Unknown'}</div>
+            <div><span class="label">Vehicle:</span>${ticket.vehicle?.makeAndModel} (${ticket.vehicle?.licensePlate})</div>
+            <div><span class="label">Odometer:</span>${ticket.vehicle?.currentOdometer || 0} km</div>
+            <div><span class="label">Mechanic:</span>${ticket.assignedMechanic?.name || 'Unassigned'}</div>
+            <div><span class="label">Service Type:</span>${ticket.serviceType}</div>
+            <div><span class="label">Total Cost:</span>Rs. ${ticket.estimatedCost || 0}</div>
+            <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border: 1px solid #ffeeba;">
+              <span class="label">Next Service Due:</span> 
+              ${(ticket.vehicle?.currentOdometer || 0) + 5000} km (Recommended)
+            </div>
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   React.useEffect(() => { 
     if(token) {
       fetch('/api/services', { headers: { 'Authorization': `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => setTickets(Array.isArray(data) ? data : []))
         .catch(console.error); 
+      fetch('/api/vehicles', { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => setVehicles(Array.isArray(data) ? data : []))
+        .catch(console.error);
     }
   }, [token]);
+
+  const filteredTickets = searchVehicle ? tickets.filter(t => t.vehicle?.licensePlate === searchVehicle) : tickets;
 
   return (
     <div>
       <div className="page-header"><h1>📊 Financial & Service Reports</h1></div>
       <div className="data-card">
         <h2 style={{color: '#ffd700', marginTop: 0}}>Service History Report</h2>
+        
+        <div style={{marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center'}}>
+          <label style={{color: '#e8dcc5'}}>Search & Select Vehicle:</label>
+          <input list="vehicleSearchList" value={searchVehicle} onChange={e => setSearchVehicle(e.target.value)} placeholder="Enter License Plate" style={{padding: '10px', borderRadius: '6px', border: '1px solid #d4af37', background: 'rgba(0,0,0,0.5)', color: '#fff', width: '250px'}} />
+          <datalist id="vehicleSearchList">
+            {vehicles.map(v => <option key={v.id} value={v.licensePlate} />)}
+          </datalist>
+          {searchVehicle && <button onClick={() => setSearchVehicle('')} style={{padding: '8px 12px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '6px'}}>Clear</button>}
+        </div>
+
         <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
           <thead>
             <tr style={{borderBottom: '1px solid rgba(212,175,55,0.4)'}}>
               <th style={{padding: '12px', color: '#ffd700'}}>Ticket ID</th>
               <th style={{padding: '12px', color: '#ffd700'}}>Date</th>
               <th style={{padding: '12px', color: '#ffd700'}}>Type</th>
-              <th style={{padding: '12px', color: '#ffd700'}}>Vehicle ID</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Vehicle</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Status</th>
               <th style={{padding: '12px', color: '#ffd700'}}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {tickets.length === 0 && <tr><td colSpan="5" style={{padding: '20px', textAlign: 'center', color: '#888'}}>No service records found.</td></tr>}
-            {tickets.map(t => (
+            {filteredTickets.length === 0 && <tr><td colSpan="6" style={{padding: '20px', textAlign: 'center', color: '#888'}}>No service records found.</td></tr>}
+            {filteredTickets.map(t => (
               <tr key={t.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
-                <td style={{padding: '12px'}}>TKT-{t.id}</td>
+                <td style={{padding: '12px'}}>#{t.id}</td>
                 <td style={{padding: '12px'}}>{t.appointmentDate}</td>
                 <td style={{padding: '12px'}}>{t.serviceType}</td>
-                <td style={{padding: '12px'}}>{t.vehicleId}</td>
-                <td style={{padding: '12px'}}><button onClick={() => window.open(`/api/invoices/${t.id}`, '_blank')} className="primary" style={{padding: '6px 12px', fontSize: '12px'}}>Download PDF</button></td>
+                <td style={{padding: '12px'}}>{t.vehicle?.licensePlate}</td>
+                <td style={{padding: '12px'}}>{t.status}</td>
+                <td style={{padding: '12px'}}>
+                  <button onClick={() => generatePDF(t)} className="primary" style={{padding: '6px 12px', fontSize: '12px'}}>Show PDF</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -366,7 +602,6 @@ export const Reports = ({ token }) => {
     </div>
   );
 };
-
 export const Geofences = () => (
   <div>
     <div className="page-header"><h1>📍 Live GPS & Geofencing</h1><div className="live-indicator"><div className="live-dot"></div> Sat-Link Active</div></div>
@@ -389,18 +624,6 @@ export const Geofences = () => (
     </div>
   </div>
 );
-
-export const Settings = ({ token }) => {
-  return (
-    <div>
-      <div className="page-header"><h1>⚙️ Command Center Settings</h1></div>
-      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
-        <h2>System Settings</h2>
-        <p>This module has been stripped of identity and mechanic logic per administrator request.</p>
-      </div>
-    </div>
-  );
-};
 
 export const GateScanner = ({ token }) => {
   const webcamRef = React.useRef(null);
@@ -615,63 +838,299 @@ export const GateScanner = ({ token }) => {
 
 export const Inventory = ({ token }) => {
   const [parts, setParts] = React.useState([]);
-  const [name, setName] = React.useState('');
-  const [stock, setStock] = React.useState('');
-  const [price, setPrice] = React.useState('');
+  const [merchants, setMerchants] = React.useState([]);
+  const [orders, setOrders] = React.useState([]);
+  const [vaultSearch, setVaultSearch] = React.useState('');
+  
+  const [newItem, setNewItem] = React.useState({ partName: '', serialNumber: '', stockLevel: '', price: '', location: '' });
+  const [order, setOrder] = React.useState({ merchant: { id: '' }, partName: '', serialNumber: '', quantity: 1 });
 
-  const fetchParts = async () => {
-    const res = await fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
-    if(res.ok) setParts(await res.json());
+  const fetchData = async () => {
+    const resP = await fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
+    if(resP.ok) setParts(await resP.json());
+    const resM = await fetch('/api/registry/merchants', { headers: { 'Authorization': `Bearer ${token}` } });
+    if(resM.ok) setMerchants(await resM.json());
+    const resO = await fetch('/api/inventory/orders', { headers: { 'Authorization': `Bearer ${token}` } });
+    if(resO.ok) setOrders(await resO.json());
   };
-  React.useEffect(() => { fetchParts(); }, []);
+
+  React.useEffect(() => { fetchData(); }, [token]);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     await fetch('/api/inventory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ partName: name, stockLevel: parseInt(stock), warningLevel: 5, price: parseFloat(price) })
+      body: JSON.stringify(newItem)
     });
-    setName(''); setStock(''); setPrice(''); fetchParts();
+    setNewItem({ partName: '', serialNumber: '', stockLevel: '', price: '', location: '' });
+    fetchData();
   };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/inventory/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchData();
+  };
+
+  const handleOrder = async (e) => {
+    e.preventDefault();
+    await fetch('/api/inventory/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(order)
+    });
+    alert("Order placed successfully.");
+    setOrder({ merchant: { id: '' }, partName: '', serialNumber: '', quantity: 1 });
+    fetchData();
+  };
+
+  const filteredParts = parts.filter(p => 
+    p.partName.toLowerCase().includes(vaultSearch.toLowerCase()) || 
+    (p.serialNumber && p.serialNumber.toLowerCase().includes(vaultSearch.toLowerCase()))
+  );
 
   return (
     <div>
-      <div className="page-header"><h1>📦 Smart Parts Vault</h1></div>
-      <div className="data-card">
-        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <input placeholder="Part Name (e.g. Brake Pads)" value={name} onChange={e => setName(e.target.value)} required style={{flex: 2, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
-          <input type="number" placeholder="Stock Level" value={stock} onChange={e => setStock(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
-          <input type="number" placeholder="Price (₹)" value={price} step="0.01" onChange={e => setPrice(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5'}} />
-          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Add to Vault</button>
+      <div className="page-header"><h1>📦 Parts Vault</h1></div>
+      <div className="data-card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        
+        <h2 style={{marginTop: 0, marginBottom: '20px'}}>Add New Part to Vault</h2>
+        <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '30px' }}>
+          <input placeholder="Part Name (e.g. Brake Pads)" value={newItem.partName} onChange={e => setNewItem({...newItem, partName: e.target.value})} required style={{padding: '10px'}} />
+          <input placeholder="Serial Number" value={newItem.serialNumber} onChange={e => setNewItem({...newItem, serialNumber: e.target.value})} required style={{padding: '10px'}} />
+          <input type="number" placeholder="Initial Stock" value={newItem.stockLevel} onChange={e => setNewItem({...newItem, stockLevel: parseInt(e.target.value) || ''})} required style={{padding: '10px'}} />
+          <input type="number" step="0.01" placeholder="Price (Rs)" value={newItem.price} onChange={e => setNewItem({...newItem, price: parseFloat(e.target.value) || ''})} required style={{padding: '10px'}} />
+          <input placeholder="Location (e.g. Aisle 4)" value={newItem.location} onChange={e => setNewItem({...newItem, location: e.target.value})} required style={{padding: '10px', gridColumn: 'span 2'}} />
+          <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px'}}>Add to Vault</button>
         </form>
 
-        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px'}}>Order Parts from Merchant</h2>
+        <form onSubmit={handleOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '30px', background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '12px' }}>
+          <select value={order.merchant.id} onChange={e => setOrder({...order, merchant: { id: e.target.value }})} required style={{padding: '10px'}}>
+            <option value="">Select Merchant</option>
+            {merchants.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+          <input placeholder="Part Name" value={order.partName} onChange={e => setOrder({...order, partName: e.target.value})} required style={{padding: '10px'}} />
+          <input placeholder="Serial Number" value={order.serialNumber} onChange={e => setOrder({...order, serialNumber: e.target.value})} required style={{padding: '10px'}} />
+          <div style={{display: 'flex', gap: '8px'}}>
+            <input type="number" min="1" placeholder="Qty" value={order.quantity} onChange={e => setOrder({...order, quantity: parseInt(e.target.value)})} required style={{padding: '10px', width: '80px'}} />
+            <button type="submit" className="primary" style={{flex: 1}}>Order</button>
+          </div>
+        </form>
+        
+        {orders.length > 0 && (
+          <div style={{marginBottom: '30px', background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '12px'}}>
+            <h3 style={{marginTop: 0}}>Order History</h3>
+            <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+              {orders.map(o => (
+                <li key={o.id} style={{padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                  Ordered <strong>{o.quantity}x {o.partName} (Serial: {o.serialNumber})</strong> from {o.merchant?.name} on {new Date(o.orderDate).toLocaleString()}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px'}}>
+            <h2 style={{margin: 0}}>Current Vault Stock</h2>
+            <input placeholder="Search Part by Name or Serial..." value={vaultSearch} onChange={e => setVaultSearch(e.target.value)} style={{padding: '8px', borderRadius: '6px', border: '1px solid #d4af37', background: 'rgba(0,0,0,0.5)', color: '#fff', width: '250px'}} />
+        </div>
+        
+        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginTop: '10px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
-              <th style={{padding: '16px', color: '#ffd700'}}>Part Name</th>
-              <th style={{padding: '16px', color: '#ffd700'}}>Stock</th>
-              <th style={{padding: '16px', color: '#ffd700'}}>Price</th>
-              <th style={{padding: '16px', color: '#ffd700'}}>Status</th>
+            <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}>
+              <th style={{padding: '12px'}}>Part Name</th>
+              <th style={{padding: '12px'}}>Serial #</th>
+              <th style={{padding: '12px'}}>Stock</th>
+              <th style={{padding: '12px'}}>Price</th>
+              <th style={{padding: '12px'}}>Location</th>
+              <th style={{padding: '12px'}}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {parts.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{padding: '16px'}}>{p.partName}</td>
-                <td style={{padding: '16px', fontWeight: 'bold'}}>{p.stockLevel}</td>
-                <td style={{padding: '16px'}}>₹{p.price.toFixed(2)}</td>
-                <td style={{padding: '16px'}}>
-                  {p.stockLevel <= p.warningLevel ? (
-                    <span style={{background: '#ef4444', color: '#fff', padding: '6px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold'}}>LOW STOCK</span>
-                  ) : (
-                    <span style={{background: 'rgba(212, 175, 55, 0.2)', color: '#ffd700', padding: '6px 12px', borderRadius: '50px', fontSize: '12px'}}>OPTIMAL</span>
-                  )}
+            {filteredParts.length === 0 && <tr><td colSpan="6" style={{padding: '20px', textAlign: 'center', color: '#888'}}>No parts match your search.</td></tr>}
+            {filteredParts.map(p => (
+              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <td style={{padding: '12px', color: '#fff'}}>{p.partName}</td>
+                <td style={{padding: '12px', color: '#ccc', fontFamily: 'monospace'}}>{p.serialNumber || 'N/A'}</td>
+                <td style={{padding: '12px', color: p.stockLevel < 10 ? '#ef4444' : '#10b981', fontWeight: 'bold'}}>
+                  {p.stockLevel} {p.stockLevel < 10 && <span style={{marginLeft: '8px', fontSize: '0.8em', background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '4px'}}>LOW STOCK</span>}
+                </td>
+                <td style={{padding: '12px', color: '#ffd700'}}>Rs. {p.price.toFixed(2)}</td>
+                <td style={{padding: '12px', color: '#9ca3af'}}>{p.location || 'N/A'}</td>
+                <td style={{padding: '12px'}}>
+                  <button onClick={() => handleDelete(p.id)} style={{background: 'darkred', color: 'white', padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+      </div>
+    </div>
+  );
+};
+
+export const Registry = ({ token, userRole }) => {
+  const [mechanics, setMechanics] = React.useState([]);
+  const [merchants, setMerchants] = React.useState([]);
+  const [usersList, setUsersList] = React.useState([]);
+
+  const [mechForm, setMechForm] = React.useState({ name: '', mobile: '' });
+  const [merchForm, setMerchForm] = React.useState({ name: '', email: '', mobile: '', address: '', site: '' });
+  const [userForm, setUserForm] = React.useState({ username: '', password: '', role: 'Employee', fullName: '' });
+
+  const fetchData = async () => {
+    try {
+      const res1 = await fetch('/api/registry/mechanics', { headers: { 'Authorization': `Bearer ${token}` } });
+      if(res1.ok) setMechanics(await res1.json());
+      const res2 = await fetch('/api/registry/merchants', { headers: { 'Authorization': `Bearer ${token}` } });
+      if(res2.ok) setMerchants(await res2.json());
+      const res3 = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if(res3.ok) setUsersList(await res3.json());
+    } catch(e) { console.error(e); }
+  };
+
+  React.useEffect(() => { fetchData(); }, [token]);
+
+  const handleAddMechanic = async (e) => {
+    e.preventDefault();
+    await fetch('/api/registry/mechanics', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(mechForm) });
+    setMechForm({ name: '', mobile: '' });
+    fetchData();
+  };
+
+  const handleDeleteMechanic = async (id) => {
+    if(!window.confirm("Delete mechanic?")) return;
+    await fetch(`/api/registry/mechanics/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchData();
+  };
+
+  const handleAddMerchant = async (e) => {
+    e.preventDefault();
+    await fetch('/api/registry/merchants', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(merchForm) });
+    setMerchForm({ name: '', email: '', mobile: '', address: '', site: '' });
+    fetchData();
+  };
+
+  const handleDeleteMerchant = async (id) => {
+    if(!window.confirm("Delete merchant?")) return;
+    await fetch(`/api/registry/merchants/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchData();
+  };
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    if (userRole === 'Manager' && userForm.role === 'Owner') {
+      alert("Managers cannot create Owner level users.");
+      return;
+    }
+    await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(userForm) });
+    setUserForm({ username: '', password: '', role: 'Employee', fullName: '' });
+    fetchData();
+  };
+
+  const handleDeleteUser = async (targetUser) => {
+    if (userRole === 'Manager' && targetUser.role === 'Owner') {
+      alert("Managers cannot delete Owner level users.");
+      return;
+    }
+    if(!window.confirm(`Delete user ${targetUser.username}?`)) return;
+    await fetch(`/api/users/${targetUser.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchData();
+  };
+
+  return (
+    <div>
+      <div className="page-header"><h1>📋 Registry & Access Control</h1></div>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        
+        {/* Mechanics */}
+        <div className="data-card">
+          <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px'}}>Mechanics Registry</h2>
+          <form onSubmit={handleAddMechanic} style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+            <input placeholder="Name" value={mechForm.name} onChange={e=>setMechForm({...mechForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            <input placeholder="Mobile" value={mechForm.mobile} onChange={e=>setMechForm({...mechForm, mobile: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            <button type="submit" className="primary" style={{padding:'8px 16px'}}>Add</button>
+          </form>
+          <table style={{width:'100%', textAlign:'left', borderCollapse:'collapse'}}>
+            <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.2)'}}><th>Name</th><th>Mobile</th><th>Action</th></tr></thead>
+            <tbody>
+              {mechanics.map(m => (
+                <tr key={m.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <td style={{padding:'8px'}}>{m.name}</td>
+                  <td style={{padding:'8px'}}>{m.mobile}</td>
+                  <td style={{padding:'8px'}}><button onClick={()=>handleDeleteMechanic(m.id)} style={{background:'darkred', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px'}}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Merchants */}
+        <div className="data-card">
+          <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px'}}>Merchants Registry</h2>
+          <form onSubmit={handleAddMerchant} style={{display:'flex', flexDirection:'column', gap:'10px', marginBottom:'20px'}}>
+            <div style={{display:'flex', gap:'10px'}}>
+              <input placeholder="Name" value={merchForm.name} onChange={e=>setMerchForm({...merchForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              <input placeholder="Email" type="email" value={merchForm.email} onChange={e=>setMerchForm({...merchForm, email: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            </div>
+            <div style={{display:'flex', gap:'10px'}}>
+              <input placeholder="Mobile" value={merchForm.mobile} onChange={e=>setMerchForm({...merchForm, mobile: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              <input placeholder="Address" value={merchForm.address} onChange={e=>setMerchForm({...merchForm, address: e.target.value})} required style={{flex:2, padding:'8px'}} />
+            </div>
+            <div style={{display:'flex', gap:'10px'}}>
+              <input placeholder="Site (Optional)" value={merchForm.site} onChange={e=>setMerchForm({...merchForm, site: e.target.value})} style={{flex:2, padding:'8px'}} />
+              <button type="submit" className="primary" style={{flex:1, padding:'8px 16px'}}>Add Merchant</button>
+            </div>
+          </form>
+          <table style={{width:'100%', textAlign:'left', borderCollapse:'collapse'}}>
+            <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.2)'}}><th>Name</th><th>Email / Mobile</th><th>Address</th><th>Action</th></tr></thead>
+            <tbody>
+              {merchants.map(m => (
+                <tr key={m.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <td style={{padding:'8px'}}>{m.name}<br/><small><a href={m.site} target="_blank" rel="noreferrer" style={{color:'#d4af37'}}>{m.site}</a></small></td>
+                  <td style={{padding:'8px'}}>{m.email}<br/>{m.mobile}</td>
+                  <td style={{padding:'8px'}}>{m.address}</td>
+                  <td style={{padding:'8px'}}><button onClick={()=>handleDeleteMerchant(m.id)} style={{background:'darkred', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px'}}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Users (Employees) */}
+        <div className="data-card" style={{gridColumn: 'span 2'}}>
+          <h2 style={{marginTop:0, borderBottom:'1px solid #1e2235', paddingBottom:'10px'}}>User Access Management</h2>
+          <form onSubmit={handleAddUser} style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+            <input placeholder="Full Name" value={userForm.fullName} onChange={e=>setUserForm({...userForm, fullName: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            <input placeholder="Username" value={userForm.username} onChange={e=>setUserForm({...userForm, username: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            <input type="password" placeholder="Password" value={userForm.password} onChange={e=>setUserForm({...userForm, password: e.target.value})} required style={{flex:1, padding:'8px'}} />
+            <select value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value})} style={{flex:1, padding:'8px'}}>
+              <option value="Employee">Employee (Limited)</option>
+              <option value="Manager">Manager</option>
+              <option value="Owner">Owner (Full Access)</option>
+            </select>
+            <button type="submit" className="primary" style={{padding:'8px 16px'}}>Create User</button>
+          </form>
+          <table style={{width:'100%', textAlign:'left', borderCollapse:'collapse'}}>
+            <thead><tr style={{borderBottom:'1px solid rgba(255,255,255,0.2)'}}><th>Full Name</th><th>Username</th><th>Role Level</th><th>Action</th></tr></thead>
+            <tbody>
+              {usersList.map(u => (
+                <tr key={u.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <td style={{padding:'8px'}}>{u.fullName || 'N/A'}</td>
+                  <td style={{padding:'8px'}}>{u.username}</td>
+                  <td style={{padding:'8px'}}><span className="badge" style={{background: u.role==='Owner'?'#dc2626':u.role==='Manager'?'#d97706':'#059669', color:'white'}}>{u.role || 'Employee'}</span></td>
+                  <td style={{padding:'8px'}}>
+                    <button onClick={()=>handleDeleteUser(u)} style={{background:'darkred', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px', opacity: (userRole === 'Manager' && u.role === 'Owner') ? 0.5 : 1}} disabled={userRole === 'Manager' && u.role === 'Owner'}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   );

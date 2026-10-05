@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/services/*/photo", "/", "/index.html", "/static/**").permitAll()
                 
                 // --- THIS IS THE LINE WE FIXED ---
-                .requestMatchers("/api/services/**", "/api/users", "/api/vehicles").authenticated()
+                .requestMatchers("/api/services/**", "/api/users", "/api/vehicles", "/api/registry/**").authenticated()
                 
                 .anyRequest().authenticated()
             )

@@ -8,6 +8,8 @@ public class InventoryItem {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String partName;
+    private String serialNumber;
+    private String location;
     private int stockLevel;
     private int warningLevel;
     private double price;
@@ -16,6 +18,10 @@ public class InventoryItem {
     public void setId(Long id) { this.id = id; }
     public String getPartName() { return partName; }
     public void setPartName(String partName) { this.partName = partName; }
+    public String getSerialNumber() { return serialNumber; }
+    public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
     public int getStockLevel() { return stockLevel; }
     public void setStockLevel(int stockLevel) { this.stockLevel = stockLevel; }
     public int getWarningLevel() { return warningLevel; }
