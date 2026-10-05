@@ -1,9 +1,21 @@
 import Webcam from "react-webcam";
 import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 export const Overview = ({ token }) => {
   const [stats, setStats] = useState({ fleetSize: 0, activeServices: 0, criticalAlerts: 0, completedBilling: 0 });
   useEffect(() => { fetch('/api/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setStats); }, [token]);
+  
+  const revenueData = [
+    { name: 'Jan', revenue: 45000 },
+    { name: 'Feb', revenue: 52000 },
+    { name: 'Mar', revenue: 48000 },
+    { name: 'Apr', revenue: 61000 },
+    { name: 'May', revenue: 59000 },
+    { name: 'Jun', revenue: 75000 },
+    { name: 'Jul', revenue: stats.completedBilling > 0 ? stats.completedBilling : 82000 },
+  ];
+
   return (
     <div>
       <div className="page-header"><h1>Overview</h1></div>
@@ -12,6 +24,20 @@ export const Overview = ({ token }) => {
         <div className="kpi-card"><div className="kpi-icon warning">🔧</div><div className="kpi-data"><span className="kpi-val">{stats.activeServices}</span><span className="kpi-label">Active Orders</span></div></div>
         <div className="kpi-card"><div className="kpi-icon critical">!</div><div className="kpi-data"><span className="kpi-val">{stats.criticalAlerts}</span><span className="kpi-label">Critical Alerts</span></div></div>
         <div className="kpi-card"><div className="kpi-icon healthy">₹</div><div className="kpi-data"><span className="kpi-val">₹{stats.completedBilling}</span><span className="kpi-label">Revenue</span></div></div>
+      </div>
+
+      <div className="data-card" style={{ marginTop: '24px', height: '400px', padding: '20px' }}>
+        <h3 style={{ color: '#ffd700', marginTop: 0 }}>Revenue Trend (YTD)</h3>
+        <ResponsiveContainer width="100%" height="90%">
+          <BarChart data={revenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis dataKey="name" stroke="#888" />
+            <YAxis stroke="#888" />
+            <Tooltip contentStyle={{ backgroundColor: '#1a1a24', border: '1px solid #d4af37' }} />
+            <Legend />
+            <Bar dataKey="revenue" fill="#d4af37" name="Revenue (₹)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -147,27 +173,24 @@ export const Alerts = ({ token }) => {
 export const Maintenance = ({ token }) => {
   const [users, setUsers] = React.useState([]); 
   const [vehicles, setVehicles] = React.useState([]); 
-  const [mechanics, setMechanics] = React.useState([]);
   const [tickets, setTickets] = React.useState([]);
   const [parts, setParts] = React.useState([]);
   const [selectedPartId, setSelectedPartId] = React.useState('');
   
   const [formData, setFormData] = React.useState({ 
-    customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null 
+    customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null 
   });
 
   const fetchAllData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
-    const [uRes, vRes, mRes, tRes, pRes] = await Promise.all([ 
+    const [uRes, vRes, tRes, pRes] = await Promise.all([ 
       fetch('/api/admin/users', { headers }), 
       fetch('/api/vehicles', { headers }), 
-      fetch('/api/mechanics', { headers }), 
       fetch('/api/services', { headers }),
       fetch('/api/inventory', { headers })
     ]);
     if(uRes.ok) setUsers(await uRes.json()); 
     if(vRes.ok) setVehicles(await vRes.json()); 
-    if(mRes.ok) setMechanics(await mRes.json()); 
     if(tRes.ok) setTickets(await tRes.json());
     if(pRes.ok) setParts(await pRes.json());
   };
@@ -183,7 +206,7 @@ export const Maintenance = ({ token }) => {
     });
     if(res.ok) {
       alert("Service ticket successfully created!");
-      setFormData({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+      setFormData({ customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
       fetchAllData();
     } else {
       alert("Error creating ticket");
@@ -228,11 +251,6 @@ export const Maintenance = ({ token }) => {
               <select value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
                 <option value="">-- Select Vehicle --</option>
                 {vehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}
-              </select>
-
-              <select value={formData.mechanicId} onChange={e => setFormData({...formData, mechanicId: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
-                <option value="">-- Select Assigned Mechanic --</option>
-                {mechanics.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
 
               <input placeholder="Service Type (e.g. Oil Change)" value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} required style={{padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
@@ -305,136 +323,80 @@ export const Maintenance = ({ token }) => {
   );
 };
 
-export const Reports = () => ( <div><div className="page-header"><h1>Reports</h1></div><div className="data-card" style={{padding:'40px', textAlign:'center', color:'#94a3b8'}}><h2>Service Reports</h2></div></div> );
-export const Geofences = () => ( <div><div className="page-header"><h1>Geofences</h1></div><div className="data-card" style={{padding:'40px', textAlign:'center', color:'#94a3b8'}}><h2>GPS Module</h2></div></div> );
-
-export const Settings = ({ token }) => {
-  const [users, setUsers] = React.useState([]);
-  const [newUsername, setNewUsername] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [newRole, setNewRole] = React.useState('MECHANIC');
-
-  const [mechanics, setMechanics] = React.useState([]);
-  const [mechName, setMechName] = React.useState('');
-  const [mechPhone, setMechPhone] = React.useState('');
-
-  const fetchData = async () => {
-    const headers = { 'Authorization': `Bearer ${token}` };
-    const uRes = await fetch('/api/admin/users', { headers });
-    if(uRes.ok) setUsers(await uRes.json());
-
-    const mRes = await fetch('/api/mechanics', { headers });
-    if(mRes.ok) setMechanics(await mRes.json());
-  };
-
-  React.useEffect(() => { fetchData(); }, []);
-
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/admin/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole })
-    });
-    if(res.ok) {
-      setNewUsername(''); setNewPassword(''); fetchData();
-    } else {
-      const data = await res.json(); alert(data.error);
+export const Reports = ({ token }) => {
+  const [tickets, setTickets] = React.useState([]);
+  React.useEffect(() => { 
+    if(token) {
+      fetch('/api/services', { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => setTickets(Array.isArray(data) ? data : []))
+        .catch(console.error); 
     }
-  };
-
-  const handleAddMechanic = async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/mechanics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: mechName, phoneNumber: mechPhone })
-    });
-    if(res.ok) {
-      setMechName(''); setMechPhone(''); fetchData();
-      alert("Mechanic registered successfully!");
-    } else {
-      const errText = await res.text(); alert("Failed: " + errText);
-    }
-  };
-
-  const handleDeleteUser = async (id, username) => {
-    if(username.toLowerCase() === 'admin') return alert("Access Denied: Cannot delete Master Admin.");
-    if(!window.confirm(`Are you sure you want to revoke access for ${username}?`)) return;
-    
-    const res = await fetch(`/api/admin/users/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if(res.ok) fetchData();
-  };
+  }, [token]);
 
   return (
     <div>
-      <div className="page-header"><h1>⚙️ Command Center Settings</h1></div>
-      
-      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '24px' }}>
-        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Access Control & Identity</h2>
-        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <input placeholder="New Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
-          <input type="password" placeholder="Secure Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
-          <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{padding: '12px', background: 'rgba(0,0,0,0.8)', border: '1px solid #d4af37', color: '#ffd700', borderRadius: '12px'}}>
-            <option value="MECHANIC">Mechanic Level</option>
-            <option value="MANAGER">Manager Level</option>
-          </select>
-          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Grant Access</button>
-        </form>
-
-        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+      <div className="page-header"><h1>📊 Financial & Service Reports</h1></div>
+      <div className="data-card">
+        <h2 style={{color: '#ffd700', marginTop: 0}}>Service History Report</h2>
+        <table style={{width: '100%', textAlign: 'left', borderCollapse: 'collapse'}}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
-              <th style={{padding: '16px', color: '#ffd700'}}>Operator ID</th>
-              <th style={{padding: '16px', color: '#ffd700'}}>Clearance Level</th>
-              <th style={{padding: '16px', color: '#ffd700', textAlign: 'right'}}>Override</th>
+            <tr style={{borderBottom: '1px solid rgba(212,175,55,0.4)'}}>
+              <th style={{padding: '12px', color: '#ffd700'}}>Ticket ID</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Date</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Type</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Vehicle ID</th>
+              <th style={{padding: '12px', color: '#ffd700'}}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{padding: '16px', fontWeight: 'bold'}}>{u.username}</td>
-                <td style={{padding: '16px'}}><span className="badge">{u.role}</span></td>
-                <td style={{padding: '16px', textAlign: 'right'}}>
-                  {u.username.toLowerCase() !== 'admin' ? (
-                    <button onClick={() => handleDeleteUser(u.id, u.username)} style={{ background: '#ef4444', color: '#fff', padding: '8px 16px', boxShadow: 'none' }}>Revoke</button>
-                  ) : (
-                    <span style={{ color: '#d4af37', fontStyle: 'italic' }}>Master Admin (Protected)</span>
-                  )}
-                </td>
+            {tickets.length === 0 && <tr><td colSpan="5" style={{padding: '20px', textAlign: 'center', color: '#888'}}>No service records found.</td></tr>}
+            {tickets.map(t => (
+              <tr key={t.id} style={{borderBottom: '1px solid rgba(255,255,255,0.05)'}}>
+                <td style={{padding: '12px'}}>TKT-{t.id}</td>
+                <td style={{padding: '12px'}}>{t.appointmentDate}</td>
+                <td style={{padding: '12px'}}>{t.serviceType}</td>
+                <td style={{padding: '12px'}}>{t.vehicleId}</td>
+                <td style={{padding: '12px'}}><button onClick={() => window.open(`/api/invoices/${t.id}`, '_blank')} className="primary" style={{padding: '6px 12px', fontSize: '12px'}}>Download PDF</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+    </div>
+  );
+};
 
-      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#ffd700'}}>Mechanic Bay Registry</h2>
-        <form onSubmit={handleAddMechanic} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <input placeholder="Mechanic Name" value={mechName} onChange={e => setMechName(e.target.value)} required style={{flex: 2, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
-          <input placeholder="Phone Number" value={mechPhone} onChange={e => setMechPhone(e.target.value)} required style={{flex: 1, padding: '12px', background: 'rgba(0,0,0,0.5)', border: '1px solid #d4af37', color: '#e8dcc5', borderRadius: '12px'}} />
-          <button type="submit" className="primary" style={{padding: '12px 24px'}}>Add Mechanic</button>
-        </form>
+export const Geofences = () => (
+  <div>
+    <div className="page-header"><h1>📍 Live GPS & Geofencing</h1><div className="live-indicator"><div className="live-dot"></div> Sat-Link Active</div></div>
+    <div className="data-card" style={{padding:'20px'}}>
+      <div style={{height: '500px', background: '#0a0c10', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.3)', position: 'relative', overflow: 'hidden'}}>
+        {/* Mock Map Background Grid */}
+        <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundSize: '40px 40px', backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)'}}></div>
+        
+        {/* Mock Geofence Area */}
+        <div style={{position: 'absolute', top: '20%', left: '30%', width: '350px', height: '250px', background: 'rgba(16, 185, 129, 0.1)', border: '2px dashed #10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontWeight: 'bold', fontSize: '1.2em'}}>Authorized Zone Alpha</div>
+        
+        {/* Mock Vehicle Trackers */}
+        <div style={{position: 'absolute', top: '35%', left: '40%', fontSize: '24px'}}>🚙<span style={{color: '#fff', fontSize: '12px', marginLeft: '8px'}}>MH-15-AB-1234</span></div>
+        <div style={{position: 'absolute', top: '55%', left: '60%', fontSize: '24px'}}>🚚<span style={{color: '#fff', fontSize: '12px', marginLeft: '8px'}}>DL-01-XYZ</span></div>
+        <div style={{position: 'absolute', top: '75%', left: '20%', fontSize: '24px'}}>🚛
+          <span style={{color: '#fff', fontSize: '12px', marginLeft: '8px'}}>KA-09-CD-99</span>
+          <div style={{position:'absolute', top: '-25px', left: '10px', background: '#ef4444', color: '#fff', fontSize: '11px', padding: '4px 8px', borderRadius: '4px', whiteSpace: 'nowrap', boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)'}}>⚠ Out of bounds!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
-        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.4)' }}>
-              <th style={{padding: '16px', color: '#ffd700'}}>Mechanic Name</th>
-              <th style={{padding: '16px', color: '#ffd700'}}>Phone Number</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mechanics.map(m => (
-              <tr key={m.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                <td style={{padding: '16px', fontWeight: 'bold'}}>{m.name}</td>
-                <td style={{padding: '16px'}}>{m.phoneNumber}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+export const Settings = ({ token }) => {
+  return (
+    <div>
+      <div className="page-header"><h1>⚙️ Command Center Settings</h1></div>
+      <div className="data-card" style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+        <h2>System Settings</h2>
+        <p>This module has been stripped of identity and mechanic logic per administrator request.</p>
       </div>
     </div>
   );

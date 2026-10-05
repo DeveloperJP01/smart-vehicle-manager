@@ -3,22 +3,21 @@ import React, { useState, useEffect } from 'react';
 function Dashboard({ token }) {
   const [stats, setStats] = useState({ fleetSize: 0, activeServices: 0, criticalAlerts: 0, completedBilling: 0 });
   const [diagnostics, setDiagnostics] = useState([]);
-  const [users, setUsers] = useState([]); const [vehicles, setVehicles] = useState([]); const [mechanics, setMechanics] = useState([]);
+  const [users, setUsers] = useState([]); const [vehicles, setVehicles] = useState([]);
   const [tickets, setTickets] = useState([]);
-  const [formData, setFormData] = useState({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+  const [formData, setFormData] = useState({ customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
 
   const fetchAllData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
-    const [statRes, diagRes, uRes, vRes, mRes, tRes] = await Promise.all([
+    const [statRes, diagRes, uRes, vRes, tRes] = await Promise.all([
       fetch('/api/dashboard', { headers }), fetch('/api/diagnostics', { headers }),
       fetch('/api/users', { headers }), fetch('/api/vehicles', { headers }),
-      fetch('/api/mechanics', { headers }), fetch('/api/services', { headers })
+      fetch('/api/services', { headers })
     ]);
     if(statRes.ok) setStats(await statRes.json());
     if(diagRes.ok) setDiagnostics(await diagRes.json());
     if(uRes.ok) setUsers(await uRes.json());
     if(vRes.ok) setVehicles(await vRes.json());
-    if(mRes.ok) setMechanics(await mRes.json());
     if(tRes.ok) setTickets(await tRes.json());
   };
 
@@ -29,7 +28,7 @@ function Dashboard({ token }) {
     const dataToSend = new FormData();
     Object.keys(formData).forEach(key => { if (formData[key]) dataToSend.append(key, formData[key]); });
     await fetch('/api/services', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: dataToSend });
-    setFormData({ customerId: '', vehicleId: '', mechanicId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
+    setFormData({ customerId: '', vehicleId: '', serviceType: '', appointmentDate: '', aftermarketMods: '', referencePhoto: null });
     fetchAllData();
   };
 
@@ -38,7 +37,7 @@ function Dashboard({ token }) {
     fetchAllData();
   };
 
-  const availableVehicles = formData.customerId ? vehicles.filter(v => v.owner.id === Number(formData.customerId)) : [];
+  const availableVehicles = formData.customerId ? vehicles.filter(v => v.owner && v.owner.id === Number(formData.customerId)) : [];
   const displayedTickets = tickets.filter(t => t.status !== 'Completed').sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
 
   return (
@@ -60,7 +59,7 @@ function Dashboard({ token }) {
         </div>
         <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #10b981' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#9ca3af', fontSize: '0.9em', textTransform: 'uppercase' }}>Completed Billing</h3>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#10b981' }}>₹{stats.completedBilling.toFixed(2)}</div>
+          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#10b981' }}>${stats.completedBilling.toFixed(2)}</div>
         </div>
       </div>
 
@@ -73,15 +72,11 @@ function Dashboard({ token }) {
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <label>Customer</label>
-              <select name="customerId" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value, vehicleId: ''})} required><option value="">Select Customer</option>{users.map(u => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select>
+              <select name="customerId" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value, vehicleId: ''})} required><option value="">Select Customer</option>{users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}</select>
             </div>
             <div className="input-group">
               <label>Vehicle</label>
               <select name="vehicleId" value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required disabled={!formData.customerId}><option value="">{!formData.customerId ? 'Select Customer First' : 'Select Vehicle'}</option>{availableVehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}</select>
-            </div>
-            <div className="input-group">
-              <label>Technician</label>
-              <select name="mechanicId" value={formData.mechanicId} onChange={e => setFormData({...formData, mechanicId: e.target.value})}><option value="">Any Available</option>{mechanics.map(m => <option key={m.id} value={m.id}>{m.name} ({m.specialization})</option>)}</select>
             </div>
             <div className="input-group">
               <label>Service Type</label>

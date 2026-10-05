@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences, Settings, Inventory } from './Pages';
+import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences,  Inventory } from './Pages';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -10,8 +10,20 @@ function App() {
     e.preventDefault();
     try {
       const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials) });
-      if (response.ok) { const jwtToken = await response.text(); localStorage.setItem('token', jwtToken); setToken(jwtToken); }
-    } catch (err) {}
+      if (response.ok) { 
+        const jwtToken = await response.text(); 
+        if (jwtToken.includes('.')) {
+          localStorage.setItem('token', jwtToken); 
+          setToken(jwtToken); 
+        } else {
+          alert('Invalid credentials or server error.');
+        }
+      } else {
+        alert('Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      alert('Network error during login.');
+    }
   };
 
   if (!token) return (
@@ -43,7 +55,6 @@ function App() {
             <li><NavLink to="/geofences" className={({isActive}) => isActive ? "active-link" : ""}>📍 Geofences</NavLink></li>
             
 <li><NavLink to="/inventory" className={({isActive}) => isActive ? "active-link" : ""}>📦 Parts Vault</NavLink></li>
-            <li><NavLink to="/settings" className={({isActive}) => isActive ? "active-link" : ""}>⚙ Settings</NavLink></li>
 
           </ul>
           <div className="sidebar-user" onClick={() => {localStorage.removeItem('token'); setToken(null);}}>
@@ -61,9 +72,8 @@ function App() {
             <Route path="/health" element={<SmartHealth token={token} />} />
             <Route path="/alerts" element={<Alerts token={token} />} />
             <Route path="/maintenance" element={<Maintenance token={token} />} />
-            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports" element={<Reports token={token} />} />
             <Route path="/geofences" element={<Geofences />} />
-            <Route path="/settings" element={<Settings />} />
             <Route path="/inventory" element={<Inventory token={token} />} />
           </Routes>
         </main>

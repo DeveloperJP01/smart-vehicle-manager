@@ -6,7 +6,7 @@ import java.io.IOException; import java.util.List; import java.util.stream.Colle
 @RestController @RequestMapping("/api")
 public class ServiceTicketController {
     @Autowired private ServiceTicketRepository ticketRepo; @Autowired private UserRepository userRepo;
-    @Autowired private VehicleRepository vehicleRepo; @Autowired private MechanicRepository mechanicRepo;
+    @Autowired private VehicleRepository vehicleRepo;
 
     @GetMapping("/users") public List<User> getAllUsers() { return userRepo.findAll(); }
     @PostMapping("/users") public User createUser(@RequestBody User user) { return userRepo.save(user); }
@@ -55,7 +55,6 @@ public class ServiceTicketController {
         ServiceTicket ticket = new ServiceTicket();
         ticket.setCustomer(userRepo.findById(req.getCustomerId()).orElseThrow());
         ticket.setVehicle(vehicleRepo.findById(req.getVehicleId()).orElseThrow());
-        if (req.getMechanicId() != null) ticket.setAssignedMechanic(mechanicRepo.findById(req.getMechanicId()).orElse(null));
         ticket.setServiceType(req.getServiceType()); ticket.setAppointmentDate(req.getAppointmentDate());
         ticket.setAftermarketMods(req.getAftermarketMods()); ticket.setStatus("Pending");
         ticket.setEstimatedCost(Math.round((Math.random() * 4000 + 1000) * 100.0) / 100.0);

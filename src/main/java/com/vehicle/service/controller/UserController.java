@@ -32,7 +32,7 @@ public class UserController {
         }
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         if (newUser.getRole() == null || newUser.getRole().isEmpty()) {
-            newUser.setRole("MECHANIC"); 
+            newUser.setRole("USER"); 
         }
         userRepository.save(newUser);
         return ResponseEntity.ok(Map.of("message", "User created successfully"));
