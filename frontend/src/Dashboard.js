@@ -37,29 +37,29 @@ function Dashboard({ token }) {
     fetchAllData();
   };
 
-  const availableVehicles = formData.customerId ? vehicles.filter(v => v.owner && v.owner.id === Number(formData.customerId)) : [];
-  const displayedTickets = tickets.filter(t => t.status !== 'Completed').sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
+  const availableVehicles = formData.customerId ? vehicles?.filter(v => v.owner && v.owner.id === Number(formData.customerId)) : [];
+  const displayedTickets = tickets?.filter(t => t.status !== 'Completed').sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* 1. AUTOSENSE KPI CARDS (TOP) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
-        <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #3b82f6' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#9ca3af', fontSize: '0.9em', textTransform: 'uppercase' }}>Vehicles Fleet</h3>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#fff' }}>{stats.fleetSize}</div>
+        <div className="card" style={{ padding: '20px', textAlign: 'center'}}>
+          <h3 style={{ margin: '0 0 10px 0',  fontSize: '0.9em', textTransform: 'uppercase' }}>Vehicles Fleet</h3>
+          <div style={{ fontSize: '2.5em', fontWeight: 'bold'}}>{stats?.fleetSize}</div>
         </div>
-        <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #fbbf24' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#9ca3af', fontSize: '0.9em', textTransform: 'uppercase' }}>Active Work Orders</h3>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#fff' }}>{stats.activeServices}</div>
+        <div className="card" style={{ padding: '20px', textAlign: 'center'}}>
+          <h3 style={{ margin: '0 0 10px 0',  fontSize: '0.9em', textTransform: 'uppercase' }}>Active Work Orders</h3>
+          <div style={{ fontSize: '2.5em', fontWeight: 'bold'}}>{stats?.activeServices}</div>
         </div>
-        <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #ef4444' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#9ca3af', fontSize: '0.9em', textTransform: 'uppercase' }}>Critical Alerts</h3>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#ef4444' }}>{stats.criticalAlerts}</div>
+        <div className="card" style={{ padding: '20px', textAlign: 'center'}}>
+          <h3 style={{ margin: '0 0 10px 0',  fontSize: '0.9em', textTransform: 'uppercase' }}>Critical Alerts</h3>
+          <div style={{ fontSize: '2.5em', fontWeight: 'bold'}}>{stats?.criticalAlerts}</div>
         </div>
-        <div className="card" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #10b981' }}>
-          <h3 style={{ margin: '0 0 10px 0', color: '#9ca3af', fontSize: '0.9em', textTransform: 'uppercase' }}>Completed Billing</h3>
-          <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#10b981' }}>${stats.completedBilling.toFixed(2)}</div>
+        <div className="card" style={{ padding: '20px', textAlign: 'center'}}>
+          <h3 style={{ margin: '0 0 10px 0',  fontSize: '0.9em', textTransform: 'uppercase' }}>Completed Billing</h3>
+          <div style={{ fontSize: '2.5em', fontWeight: 'bold'}}>${(stats?.completedBilling || 0).toFixed(2)}</div>
         </div>
       </div>
 
@@ -72,11 +72,11 @@ function Dashboard({ token }) {
           <form onSubmit={handleSubmit}>
             <div className="input-group">
               <label>Customer</label>
-              <select name="customerId" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value, vehicleId: ''})} required><option value="">Select Customer</option>{users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}</select>
+              <select name="customerId" value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value, vehicleId: ''})} required><option value="">Select Customer</option>{users?.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}</select>
             </div>
             <div className="input-group">
               <label>Vehicle</label>
-              <select name="vehicleId" value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required disabled={!formData.customerId}><option value="">{!formData.customerId ? 'Select Customer First' : 'Select Vehicle'}</option>{availableVehicles.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}</select>
+              <select name="vehicleId" value={formData.vehicleId} onChange={e => setFormData({...formData, vehicleId: e.target.value})} required disabled={!formData.customerId}><option value="">{!formData.customerId ? 'Select Customer First' : 'Select Vehicle'}</option>{availableVehicles?.map(v => <option key={v.id} value={v.id}>{v.licensePlate} - {v.makeAndModel}</option>)}</select>
             </div>
             <div className="input-group">
               <label>Service Type</label>
@@ -106,11 +106,11 @@ function Dashboard({ token }) {
             <h2>Active Queue</h2>
             <table>
               <thead><tr><th>Order ID</th><th>Customer</th><th>Vehicle</th><th>Service Type</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>{displayedTickets.map(t => (
+              <tbody>{displayedTickets?.map(t => (
                 <tr key={t.id}>
                   <td>#{t.id}</td>
                   <td>{t.customer.fullName}</td>
-                  <td>{t.vehicle.licensePlate}<br/><span style={{fontSize:'0.85em', color:'#9ca3af'}}>{t.vehicle.makeAndModel}</span></td>
+                  <td>{t.vehicle.licensePlate}<br/><span style={{fontSize:'0.85em'}}>{t.vehicle.makeAndModel}</span></td>
                   <td>{t.serviceType}{t.aftermarketMods && <><br/><span className="mod-badge">Custom</span></>}</td>
                   <td><span className={`status ${t.status.toLowerCase()}`}>{t.status}</span></td>
                   <td>
@@ -121,7 +121,7 @@ function Dashboard({ token }) {
                   </td>
                 </tr>
               ))}
-              {displayedTickets.length === 0 && <tr><td colSpan="6" style={{textAlign:'center', color:'#9ca3af'}}>No active orders.</td></tr>}
+              {displayedTickets?.length === 0 && <tr><td colSpan="6" style={{textAlign:'center'}}>No active orders.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -132,12 +132,12 @@ function Dashboard({ token }) {
             <table>
               <thead><tr><th>Vehicle</th><th>Odometer</th><th>Status</th><th>Active Alerts</th></tr></thead>
               <tbody>
-                {diagnostics.map((d, i) => (
+                {diagnostics?.map((d, i) => (
                   <tr key={i}>
-                    <td>{d.vehicle.licensePlate}<br/><span style={{fontSize:'0.85em', color:'#9ca3af'}}>{d.vehicle.makeAndModel}</span></td>
+                    <td>{d.vehicle.licensePlate}<br/><span style={{fontSize:'0.85em'}}>{d.vehicle.makeAndModel}</span></td>
                     <td>{d.vehicle.currentOdometer} km</td>
-                    <td><span className={`status ${d.status.toLowerCase() === 'optimal' ? 'completed' : d.status.toLowerCase() === 'warning' ? 'pending' : 'critical'}`} style={d.status === 'CRITICAL' ? {background:'rgba(239, 68, 68, 0.15)', color:'#ef4444', border:'1px solid rgba(239, 68, 68, 0.3)'} : {}}>{d.status}</span></td>
-                    <td style={{color: '#9ca3af', fontSize: '0.9em'}}>{d.alerts.length > 0 ? d.alerts.join(', ') : 'All systems normal'}</td>
+                    <td><span className={`status ${d.status.toLowerCase() === 'optimal' ? 'completed' : d.status.toLowerCase() === 'warning' ? 'pending' : 'critical'}`} style={d.status === 'CRITICAL' ? {background:'rgba(0, 0, 0, 0.15)', color:'var(--black)', border:'1px solid rgba(0, 0, 0, 0.3)'} : {}}>{d.status}</span></td>
+                    <td style={{ fontSize: '0.9em'}}>{d.alerts?.length > 0 ? d.alerts.join(', ') : 'All systems normal'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -10,6 +10,8 @@ public class PartOrder {
     private String serialNumber;
     private int quantity;
     private LocalDateTime orderDate;
+    private String status; // "Pending", "Completed", "Canceled"
+    private String generation; // "Manual", "Automated"
     
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
     public Merchant getMerchant() { return merchant; } public void setMerchant(Merchant merchant) { this.merchant = merchant; }
@@ -17,4 +19,6 @@ public class PartOrder {
     public String getSerialNumber() { return serialNumber; } public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
     public int getQuantity() { return quantity; } public void setQuantity(int quantity) { this.quantity = quantity; }
     public LocalDateTime getOrderDate() { return orderDate; } public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
+    public String getStatus() { return status; } public void setStatus(String status) { this.status = status; }
+    public String getGeneration() { return generation; } public void setGeneration(String generation) { this.generation = generation; }
 }

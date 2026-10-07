@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences,  Inventory, Registry } from './Pages';
+import { GateScanner, Overview, Vehicles, SmartHealth, Alerts, Maintenance, Reports, Geofences,  Inventory, Registry, Finance } from './Pages';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const getInitialToken = () => {
+    const t = localStorage.getItem('token');
+    return (t === 'null' || t === 'undefined' || !t) ? null : t;
+  };
+  const [token, setToken] = useState(getInitialToken());
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
 
@@ -43,9 +47,9 @@ function App() {
   };
 
   if (!token) return (
-    <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#0f111a'}}>
-      <form onSubmit={handleLogin} style={{background:'#13151f', padding:'40px', borderRadius:'8px', width:'300px', border:'1px solid #1e2235'}}>
-        <h2 style={{color:'#fff', textAlign:'center', marginTop:0}}>AutoSense</h2>
+    <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100vh'}}>
+      <form onSubmit={handleLogin} style={{ padding:'40px', borderRadius:'8px', width:'300px'}}>
+        <h2 style={{ textAlign:'center', marginTop:0}}>Premium Auto Services</h2>
         <input placeholder="Username" onChange={e => setCredentials({...credentials, username: e.target.value})} style={{marginBottom:'15px'}}/>
         <input type="password" placeholder="Password" onChange={e => setCredentials({...credentials, password: e.target.value})} style={{marginBottom:'15px'}}/>
         <button className="primary" type="submit" style={{width:'100%'}}>Login</button>
@@ -53,10 +57,10 @@ function App() {
     </div>
   );
 
-  const role = user?.role || 'Employee';
-  const isOwner = role === 'Owner';
-  const isManager = role === 'Manager';
-  const isEmployee = role === 'Employee';
+  const role = user?.role?.toUpperCase() || 'EMPLOYEE';
+  const isOwner = role === 'OWNER';
+  const isManager = role === 'MANAGER';
+  const isEmployee = role === 'EMPLOYEE';
 
   return (
     <Router>
@@ -64,18 +68,32 @@ function App() {
         
         {/* EXACT 9-MODULE SIDEBAR */}
         <nav className="sidebar">
-          <div className="sidebar-brand">dYsT Auto<span>Sense</span></div>
-          <ul className="nav-links">
-            <li><NavLink to="/" end className={({isActive}) => isActive ? "active-link" : ""}>Sz Overview</NavLink></li>
-            <li><NavLink to="/vehicles" className={({isActive}) => isActive ? "active-link" : ""}>🚘 Vehicles</NavLink></li>
+          <div className="sidebar-brand" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 16L3 5L8.5 4L10 8H14L15.5 4L21 5L19 16H5Z" fill="url(#grad1)"/>
+    <circle cx="8" cy="19" r="2.5" fill="var(--black)"/>
+    <circle cx="16" cy="19" r="2.5" fill="var(--black)"/>
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#800000" />
+        <stop offset="100%" stopColor="#000000" />
+      </linearGradient>
+    </defs>
+  </svg>
+  Premium Auto<span>Services</span>
+</div>
+                    <ul className="nav-links">
+            <li><NavLink to="/" end className={({isActive}) => isActive ? "active-link" : ""}>📊 Overview</NavLink></li>
+            <li><NavLink to="/vehicles" className={({isActive}) => isActive ? "active-link" : ""}>🚗 Vehicles</NavLink></li>
             {(!isEmployee) && <li><NavLink to="/scanner" className={({isActive}) => isActive ? "active-link" : ""}>📷 Gate Scanner</NavLink></li>}
             <li><NavLink to="/health" className={({isActive}) => isActive ? "active-link" : ""}>🩺 Smart Health</NavLink></li>
-            {(!isEmployee) && <li><NavLink to="/alerts" className={({isActive}) => isActive ? "active-link" : ""}>⚠️ Alerts</NavLink></li>}
+            {(!isEmployee) && <li><NavLink to="/alerts" className={({isActive}) => isActive ? "active-link" : ""}>🚨 Alerts</NavLink></li>}
             {(!isEmployee) && <li><NavLink to="/maintenance" className={({isActive}) => isActive ? "active-link" : ""}>🔧 Maintenance</NavLink></li>}
-            <li><NavLink to="/reports" className={({isActive}) => isActive ? "active-link" : ""}>📋 Reports</NavLink></li>
+            <li><NavLink to="/reports" className={({isActive}) => isActive ? "active-link" : ""}>📈 Reports</NavLink></li>
             {(!isEmployee) && <li><NavLink to="/geofences" className={({isActive}) => isActive ? "active-link" : ""}>📍 Geofences</NavLink></li>}
             <li><NavLink to="/inventory" className={({isActive}) => isActive ? "active-link" : ""}>📦 Parts Vault</NavLink></li>
-            {(!isEmployee) && <li><NavLink to="/registry" className={({isActive}) => isActive ? "active-link" : ""}>🗃️ Registry</NavLink></li>}
+            {(!isEmployee) && <li><NavLink to="/finance" className={({isActive}) => isActive ? "active-link" : ""}>💰 Financial Management</NavLink></li>}
+            {(!isEmployee) && <li><NavLink to="/registry" className={({isActive}) => isActive ? "active-link" : ""}>🏢 Registry</NavLink></li>}
           </ul>
           <div className="sidebar-user" onClick={logout}>
             <div className="user-avatar-circle">{user?.username?.[0]?.toUpperCase() || 'U'}</div>
@@ -95,6 +113,7 @@ function App() {
             <Route path="/reports" element={<Reports token={token} userRole={role} />} />
             {(!isEmployee) && <Route path="/geofences" element={<Geofences />} />}
             <Route path="/inventory" element={<Inventory token={token} />} />
+            {(!isEmployee) && <Route path="/finance" element={<Finance token={token} />} />}
             {(!isEmployee) && <Route path="/registry" element={<Registry token={token} userRole={role} />} />}
           </Routes>
         </main>

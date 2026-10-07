@@ -6,17 +6,22 @@ import java.io.IOException; import java.util.List; import java.util.stream.Colle
 @RestController @RequestMapping("/api")
 public class ServiceTicketController {
     @Autowired private ServiceTicketRepository ticketRepo; @Autowired private UserRepository userRepo;
-    @Autowired private VehicleRepository vehicleRepo; @Autowired private MechanicRepository mechanicRepo;
+    @Autowired private VehicleRepository vehicleRepo;
 
     @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @GetMapping("/users") public List<User> getAllUsers() { return userRepo.findAll(); }
-    @PostMapping("/users") public User createUser(@RequestBody User user) { 
-        if (user.getPassword() != null && !user.getPassword().startsWith("{")) {
+    
+    @PostMapping("/users")
+    public User createUser(@RequestBody User user) {
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+        } else {
+            user.setPassword(passwordEncoder.encode("password123"));
         }
-        return userRepo.save(user); 
+        return userRepo.save(user);
     }
+
     
     @DeleteMapping("/users/{id}") public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try { 
@@ -68,7 +73,7 @@ public class ServiceTicketController {
         }
 
         if (req.getMechanicId() != null) {
-            ticket.setAssignedMechanic(mechanicRepo.findById(req.getMechanicId()).orElse(null));
+            ticket.setAssignedMechanic(userRepo.findById(req.getMechanicId()).orElse(null));
         }
 
         ticket.setServiceType(req.getServiceType()); ticket.setAppointmentDate(req.getAppointmentDate());

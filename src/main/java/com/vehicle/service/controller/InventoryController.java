@@ -61,13 +61,40 @@ public class InventoryController {
         return orderRepo.findAll();
     }
 
+    
     @PostMapping("/orders")
     public ResponseEntity<?> orderParts(@RequestBody PartOrder order) {
         order.setOrderDate(LocalDateTime.now());
+        if (order.getStatus() == null) order.setStatus("Pending");
+        if (order.getGeneration() == null) order.setGeneration("Manual");
         if (order.getMerchant() != null && order.getMerchant().getId() != null) {
             order.setMerchant(merchantRepo.findById(order.getMerchant().getId()).orElse(null));
         }
         orderRepo.save(order);
         return ResponseEntity.ok(Map.of("message", "Order placed with merchant successfully."));
+    }
+
+    @PutMapping("/orders/{id}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
+        PartOrder order = orderRepo.findById(id).orElse(null);
+        if (order == null) return ResponseEntity.notFound().build();
+        
+        if ("Canceled".equals(status)) {
+            // Check 24 hour limit
+            if (order.getOrderDate().plusHours(24).isBefore(LocalDateTime.now())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cannot cancel order after 24 hours."));
+            }
+            order.setStatus("Canceled");
+        } else if ("Completed".equals(status)) {
+            order.setStatus("Completed");
+            // Increment stock
+            InventoryItem item = repo.findBySerialNumber(order.getSerialNumber());
+            if (item != null) {
+                item.setStockLevel(item.getStockLevel() + order.getQuantity());
+                repo.save(item);
+            }
+        }
+        orderRepo.save(order);
+        return ResponseEntity.ok(Map.of("message", "Order status updated."));
     }
 }

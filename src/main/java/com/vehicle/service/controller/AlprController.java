@@ -37,6 +37,19 @@ public class AlprController {
         return scanLogRepository.findAllByOrderByIdDesc();
     }
 
+    private int calculateLevenshteinDistance(CharSequence lhs, CharSequence rhs) {
+        int[][] distance = new int[lhs.length() + 1][rhs.length() + 1];
+        for (int i = 0; i <= lhs.length(); i++) distance[i][0] = i;
+        for (int j = 1; j <= rhs.length(); j++) distance[0][j] = j;
+        for (int i = 1; i <= lhs.length(); i++) {
+            for (int j = 1; j <= rhs.length(); j++) {
+                int cost = (lhs.charAt(i - 1) == rhs.charAt(j - 1)) ? 0 : 1;
+                distance[i][j] = Math.min(Math.min(distance[i - 1][j] + 1, distance[i][j - 1] + 1), distance[i - 1][j - 1] + cost);
+            }
+        }
+        return distance[lhs.length()][rhs.length()];
+    }
+
     @PostMapping("/scan")
     public ResponseEntity<?> scanPlate(@RequestBody Map<String, String> payload) {
         String imageBase64 = payload.get("imageBase64");
@@ -81,6 +94,9 @@ public class AlprController {
                 }
             } catch (Exception e) {
                 System.err.println("Failed to connect to Python AI on port 8000: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+                    "error", "ALPR Engine is offline. Please start the Python ALPR engine."
+                ));
             }
         }
 
@@ -91,12 +107,36 @@ public class AlprController {
             ));
         }
 
-        final String detectedPlate = rawPlate.replaceAll("[^a-zA-Z0-9]", "").toUpperCase().trim();
+        final String initialDetectedPlate = rawPlate.replaceAll("[^a-zA-Z0-9]", "").toUpperCase().trim();
 
-        // 4. Check Database
-        Optional<Vehicle> vehicleOpt = vehicleRepository.findAll().stream()
-                .filter(v -> v.getLicensePlate() != null && v.getLicensePlate().replaceAll("[^a-zA-Z0-9]", "").toUpperCase().equals(detectedPlate))
+        // 4. Check Database with Exact and Fuzzy Matching
+        List<Vehicle> allVehicles = vehicleRepository.findAll();
+        Optional<Vehicle> vehicleOpt = allVehicles.stream()
+                .filter(v -> v.getLicensePlate() != null && v.getLicensePlate().replaceAll("[^a-zA-Z0-9]", "").toUpperCase().equals(initialDetectedPlate))
                 .findFirst();
+
+        String finalDetectedPlate = initialDetectedPlate;
+
+        if (!vehicleOpt.isPresent() && !payload.containsKey("manualPlate")) {
+            // Fuzzy Matching Fallback (Levenshtein Distance)
+            Vehicle bestMatch = null;
+            int minDistance = 999;
+            for (Vehicle v : allVehicles) {
+                if (v.getLicensePlate() == null) continue;
+                String dbPlate = v.getLicensePlate().replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+                int dist = calculateLevenshteinDistance(initialDetectedPlate, dbPlate);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    bestMatch = v;
+                }
+            }
+            // If the OCR is only 1 or 2 characters off from a registered vehicle, auto-correct it!
+            if (bestMatch != null && minDistance <= 2) {
+                System.out.println("FUZZY MATCH ACTIVATED! Auto-correcting AI misread '" + initialDetectedPlate + "' to '" + bestMatch.getLicensePlate() + "' (Distance: " + minDistance + ")");
+                vehicleOpt = Optional.of(bestMatch);
+                finalDetectedPlate = bestMatch.getLicensePlate().replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+            }
+        }
 
         String ownerName = "Unregistered Visitor";
         String status = "VISITOR (Unregistered)";
@@ -108,14 +148,14 @@ public class AlprController {
         String scanTime = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm:ss a"));
 
         GateScanLog log = new GateScanLog();
-        log.setLicensePlate(detectedPlate);
+        log.setLicensePlate(finalDetectedPlate);
         log.setOwnerName(ownerName);
         log.setScanTime(scanTime);
         log.setStatus(status);
         scanLogRepository.save(log);
 
         return ResponseEntity.ok(Map.of(
-            "licensePlate", detectedPlate,
+            "licensePlate", finalDetectedPlate,
             "ownerName", ownerName,
             "status", status,
             "ticketId", "TICK-" + System.currentTimeMillis() % 100000,
