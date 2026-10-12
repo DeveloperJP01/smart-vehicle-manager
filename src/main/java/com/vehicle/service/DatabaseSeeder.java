@@ -24,6 +24,8 @@ public class DatabaseSeeder {
                 admin.setPassword(passwordEncoder.encode("Admin012026"));
                 admin.setRole("Owner");
                 admin.setFullName("System Owner");
+                admin.setSecurityQuestion("What is your workshop name?");
+                admin.setSecurityAnswer("Premium Auto Services");
                 userRepo.save(admin);
                 System.out.println("Default Owner account Admin01 created.");
             }

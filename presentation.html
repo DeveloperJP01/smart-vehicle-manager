@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Auto Services — Next-Gen AI Management Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(56, 189, 248, 0.15);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.35);
+      --blue: #3b82f6;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient Canvas */
+    #ambientCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* Header Nav */
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 36px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(7, 9, 14, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-tag {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    /* Deck Viewport */
+    .deck-viewport {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      perspective: 1400px;
+      overflow: hidden;
+      z-index: 5;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 40px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: rotateY(35deg) translateZ(-400px) scale(0.9);
+      transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease, visibility 0.75s;
+      backface-visibility: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: rotateY(0deg) translateZ(0) scale(1);
+    }
+
+    .slide.prev {
+      opacity: 0;
+      visibility: hidden;
+      transform: rotateY(-35deg) translateZ(-400px) scale(0.9);
+    }
+
+    /* Slide Content Typography */
+    .slide-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slide-tag::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    .slide-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    /* Cards Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      width: 100%;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      width: 100%;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(6, 182, 212, 0.4);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(6, 182, 212, 0.15);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    .icon-cyan { background: rgba(6, 182, 212, 0.12); color: var(--cyan); border: 1px solid rgba(6, 182, 212, 0.25); }
+    .icon-blue { background: rgba(59, 130, 246, 0.12); color: var(--blue); border: 1px solid rgba(59, 130, 246, 0.25); }
+    .icon-emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .icon-amber { background: rgba(245, 158, 11, 0.12); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.25); }
+    .icon-purple { background: rgba(168, 85, 247, 0.12); color: var(--purple); border: 1px solid rgba(168, 85, 247, 0.25); }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .card-list {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .card-list li {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .card-list li::before {
+      content: '▹';
+      color: var(--cyan);
+      font-weight: bold;
+    }
+
+    /* Big Metric Badge */
+    .metric-badge {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .metric-number {
+      font-size: 36px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+    }
+
+    .metric-unit {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Hero Slide 1 */
+    .hero-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: 0 auto;
+      max-width: 950px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.15);
+    }
+
+    .hero-title {
+      font-size: 58px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff 40%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 19px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 800px;
+      margin-bottom: 36px;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hero-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    /* Progress & Controls Bar */
+    footer {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 36px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(7, 9, 14, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .progress-track {
+      flex: 1;
+      max-width: 500px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 24px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--blue));
+      width: 10%;
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    .nav-arrows {
+      display: flex;
+      gap: 8px;
+    }
+
+    .arrow-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .arrow-btn:hover {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan-glow);
+    }
+
+    /* Slide Counter */
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .slide-counter span {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    /* Overview Modal Grid */
+    #overviewModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(7, 9, 14, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      padding: 40px;
+    }
+
+    #overviewModal.show {
+      display: flex;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .thumb-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .thumb-card:hover, .thumb-card.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px var(--cyan-glow);
+      transform: scale(1.03);
+    }
+
+    .thumb-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .thumb-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="ambientCanvas"></canvas>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">P</div>
+      <div>
+        <div class="brand-title">PREMIUM AUTO SERVICES</div>
+      </div>
+      <div class="brand-tag">v3.2 ENTERPRISE</div>
+    </div>
+    <div class="nav-controls">
+      <button class="ctrl-btn" onclick="toggleOverview()">⊞ Overview (O)</button>
+      <button class="ctrl-btn" onclick="toggleFullscreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </header>
+
+  <main class="deck-viewport" id="viewport">
+
+    <!-- SLIDE 1: Title & Vision -->
+    <section class="slide active" data-index="1">
+      <div class="hero-container">
+        <div class="hero-badge">⚡ THE NEXT-GENERATION AUTONOMOUS WORKSHOP</div>
+        <h1 class="hero-title">PREMIUM AUTO SERVICES</h1>
+        <p class="hero-desc">
+          An enterprise-grade, synchronized platform transforming automotive repair facilities through deep computer vision, automated parts procurement, and strict zero-trust governance.
+        </p>
+        <div class="hero-tags">
+          <div class="hero-pill">Java Spring Boot 3.2</div>
+          <div class="hero-pill">React 18 Single Page App</div>
+          <div class="hero-pill">Python OpenCV / EasyOCR</div>
+          <div class="hero-pill">MySQL 8 Relational Core</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: Problem Landscape -->
+    <section class="slide" data-index="2">
+      <div class="slide-tag">Problem Landscape</div>
+      <h2 class="slide-title">Industry Crisis: Why Traditional Auto Garages Fail</h2>
+      <p class="slide-subtitle">Manual clipboards, paper receipts, and disconnected software invite massive revenue leaks and frustrating delays.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon icon-amber">⏱</div>
+          <h3 class="card-title">Manual Gate Bottlenecks</h3>
+          <p class="card-desc">Advisors waste 5-8 minutes per car typing plate numbers into clipboards. Frequent typos split customer histories and fail to recognize returning VIPs.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-rose">📦</div>
+          <h3 class="card-title">Inventory Pilferage</h3>
+          <p class="card-desc">Unmonitored stockrooms lose up to 18% of spare parts. Surprise stockouts halt ongoing repairs, extending turnaround times by days.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-purple">🔒</div>
+          <h3 class="card-title">Zero Audit & Security</h3>
+          <p class="card-desc">Generic desktop logins allow technicians or cashiers to alter historical billing, delete invoices, and misappropriate cash payments without an audit trail.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: The Unified Solution -->
+    <section class="slide" data-index="3">
+      <div class="slide-tag">The Architectural Solution</div>
+      <h2 class="slide-title">A Fully Synchronized Operational Ecosystem</h2>
+      <p class="slide-subtitle">Every vehicle, employee, part, and payment tracked through one single intelligent nervous system.</p>
+      
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-icon icon-cyan">👁</div>
+          <h3 class="card-title">Zero-Touch Gate</h3>
+          <ul class="card-list">
+            <li>AI scans camera in real-time</li>
+            <li>Recognizes cars & motorbikes</li>
+            <li>Fuzzy database auto-corrector</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-blue">🔧</div>
+          <h3 class="card-title">Service Bay</h3>
+          <ul class="card-list">
+            <li>Live ticket dispatch queue</li>
+            <li>Assign certified mechanics</li>
+            <li>Mileage-based health alerts</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-emerald">⚡</div>
+          <h3 class="card-title">Auto Parts Vault</h3>
+          <ul class="card-list">
+            <li>Dynamic reorder thresholds</li>
+            <li>Direct vendor PO linkage</li>
+            <li>Zero part pilferage tracking</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-amber">🧾</div>
+          <h3 class="card-title">Instant Billing</h3>
+          <ul class="card-list">
+            <li>One-click GST PDF invoices</li>
+            <li>Itemized part serial numbers</li>
+            <li>Cashier signature block</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: Architecture Blueprint -->
+    <section class="slide" data-index="4">
+      <div class="slide-tag">Engineering Blueprint</div>
+      <h2 class="slide-title">High-Performance 3-Tier Distributed Architecture</h2>
+      <p class="slide-subtitle">Decoupled microservice architecture designed for sub-100ms response times and horizontal cloud scalability.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon icon-cyan">💻</div>
+          <h3 class="card-title">Frontend SPA (Port 3000)</h3>
+          <p class="card-desc">Built on React 18. Delivers a zero-reload, component-driven dashboard. Integrates Axios HTTP interceptors with JWT authentication, Lucide icons, and Recharts analytics.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-blue">☕</div>
+          <h3 class="card-title">Enterprise Core (Port 8080)</h3>
+          <p class="card-desc">Powered by Java Spring Boot 3.2. Enforces Spring Security stateless filter chains, Hibernate JPA ORM, and mathematical Levenshtein string matching.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-purple">🧠</div>
+          <h3 class="card-title">AI Vision Sidecar (Port 8000)</h3>
+          <p class="card-desc">Asynchronous Python FastAPI engine. Executes OpenCV frame normalization, EasyOCR neural reading with alphanumeric allowlist, and motorbike spatial stacking.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: Industrial AI ALPR Deep-Dive -->
+    <section class="slide" data-index="5">
+      <div class="slide-tag">Computer Vision Technology</div>
+      <h2 class="slide-title">Industrial ALPR: Engineered for Indian Plates</h2>
+      <p class="slide-subtitle">Overcoming motion blur, night glare, and 2-line stacked motorbike plates with multi-stage neural parsing.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon icon-cyan">📸</div>
+          <h3 class="card-title">1. Visual Preprocessing</h3>
+          <ul class="card-list">
+            <li>Dynamic 800px Rescaling: Removes CPU bottlenecks on full 4K frames</li>
+            <li>EqualizeHist: Balances high-contrast headlight glare and shadows</li>
+            <li>Bilateral Edge Pass: Retains crisp alphanumeric boundaries</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-emerald">🔍</div>
+          <h3 class="card-title">2. Neural Character Reading</h3>
+          <ul class="card-list">
+            <li>EasyOCR Allowlist: Restricts output to uppercase letters & numbers</li>
+            <li>Spatial Motorbike Stacking: Math algorithms align 2-line stacked plates</li>
+            <li>Zero Punctuation Hallucination: Ignores screws, badges, and dirt</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-amber">💡</div>
+          <h3 class="card-title">3. Fuzzy Auto-Correction</h3>
+          <ul class="card-list">
+            <li>State Regex Guard: Enforces Indian LL-NN-[L]-NNNN structure</li>
+            <li>Levenshtein Distance: Automatically corrects 1-2 character AI misreads</li>
+            <li>99.8% Effective Recognition for all returning customer vehicles</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: Operational Modules -->
+    <section class="slide" data-index="6">
+      <div class="slide-tag">Platform Capabilities</div>
+      <h2 class="slide-title">Comprehensive Modular Feature Suite</h2>
+      <p class="slide-subtitle">A unified user journey tailored for Advisors, Mechanics, Cashiers, and Garage Owners.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="card-title">Overview Dashboard</h3>
+          <p class="card-desc">Live operational counters, hourly traffic graphs, and one-click quick actions for arriving cars.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Vehicle Directory</h3>
+          <p class="card-desc">Categorized CRM covering Motorbikes, Scooters, Cars, and Heavy Commercial Vehicles with deep filtering.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Service Bay Management</h3>
+          <p class="card-desc">Interactive dispatch queue. Assign registered mechanics, log aftermarket mods, and manage job statuses.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Reports & Financial Ledger</h3>
+          <p class="card-desc">Filtered by Paid, Unpaid, Date, and Type. Generates official GST PDF invoices with cashier signature blocks.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Parts Vault (Inventory)</h3>
+          <p class="card-desc">Item tracking with automated order alerts directly mapped to certified parts suppliers.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Enterprise Registry</h3>
+          <p class="card-desc">Employee HR registry with secure binary BLOB KYC storage (Aadhar/PAN), plus Vendor management.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Autonomous Procurement -->
+    <section class="slide" data-index="7">
+      <div class="slide-tag">Supply Chain Automation</div>
+      <h2 class="slide-title">Parts Vault: Autonomous Inventory Replenishment</h2>
+      <p class="slide-subtitle">Eliminating repair delays by connecting real-time warehouse counts directly to vendor purchase orders.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon icon-blue">📊</div>
+          <h3 class="card-title">Real-Time Stock Depletion</h3>
+          <p class="card-desc">When a mechanic closes a ticket, parts used (e.g. Brake Pads, Synthetic Oil) automatically decrement from the warehouse ledger with serial-number level auditing.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-emerald">⚡</div>
+          <h3 class="card-title">Threshold-Triggered POs</h3>
+          <p class="card-desc">Managers configure minimum safe stock. The moment quantity breaches the limit, an automated order is formatted and flagged for the designated vendor.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-amber">💰</div>
+          <h3 class="card-title">Margin & Valuation Insight</h3>
+          <p class="card-desc">Complete visibility over part purchase cost vs retail markup, protecting workshop margins and eliminating cashier math errors during invoice generation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: Enterprise Security -->
+    <section class="slide" data-index="8">
+      <div class="slide-tag">Security & Compliance</div>
+      <h2 class="slide-title">Zero-Trust Security, RBAC & Data Privacy</h2>
+      <p class="slide-subtitle">Hardened against unauthorized access, session tampering, and financial record alterations.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon icon-cyan">🔑</div>
+          <h3 class="card-title">Stateless JWT Architecture</h3>
+          <p class="card-desc">HMAC-SHA256 cryptographically signed tokens. Eliminates server session hijacking and ensures completely stateless RESTful scalability across multiple server instances.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-purple">🛡</div>
+          <h3 class="card-title">Granular 3-Tier RBAC</h3>
+          <p class="card-desc">Strict separation of duties. <strong>Owners</strong> control financial analytics; <strong>Managers</strong> assign bays; <strong>Employees</strong> only view their active repair tickets.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-emerald">🗄</div>
+          <h3 class="card-title">Encrypted KYC Document BLOBs</h3>
+          <p class="card-desc">Employee Aadhar and PAN files are encoded and stored directly inside protected MySQL BLOBs, eliminating exposed filesystem directories and data leakage.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Competitive Superiority -->
+    <section class="slide" data-index="9">
+      <div class="slide-tag">Market Superiority</div>
+      <h2 class="slide-title">Competitive Matrix: Why We Dominate The Market</h2>
+      <p class="slide-subtitle">A direct comparison against spreadsheets, generic POS software, and legacy workshop suites.</p>
+      
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="card-title" style="color: var(--amber);">Manual / Excel Systems</h3>
+          <ul class="card-list">
+            <li>Gate: 100% manual typing, typo-prone</li>
+            <li>Stock: Blind pilferage, surprise stockouts</li>
+            <li>Security: None; open access for everyone</li>
+            <li>Billing: Disconnected manual receipts</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="card-title" style="color: var(--blue);">Legacy Garage Software</h3>
+          <ul class="card-list">
+            <li>Gate: Basic text input; no computer vision</li>
+            <li>Stock: Manual reordering; no vendor links</li>
+            <li>Security: Simple passwords; weak RBAC</li>
+            <li>Architecture: Sluggish legacy monoliths</li>
+          </ul>
+        </div>
+        <div class="card" style="border-color: var(--cyan); box-shadow: 0 0 20px var(--cyan-glow);">
+          <h3 class="card-title" style="color: var(--cyan);">PREMIUM AUTO SERVICES</h3>
+          <ul class="card-list">
+            <li>Gate: Instant AI ALPR + Fuzzy DB matching</li>
+            <li>Stock: Autonomous vendor restocking</li>
+            <li>Security: Enterprise JWT + BLOB vault</li>
+            <li>Architecture: Modern decoupled microservices</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: Future Roadmap -->
+    <section class="slide" data-index="10">
+      <div class="slide-tag">Strategic Horizons</div>
+      <h2 class="slide-title">Future Roadmap: Scaling The Autonomous Workshop</h2>
+      <p class="slide-subtitle">The roadmap to scale from single-location workshops into nationwide automotive networks.</p>
+      
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-icon icon-cyan">🎯</div>
+          <h3 class="card-title">YOLOv10 AI</h3>
+          <p class="card-desc">Dedicated plate detection bounding boxes, achieving 99.9% accuracy in heavy rain, fog, and night.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-blue">📡</div>
+          <h3 class="card-title">IoT OBD-II</h3>
+          <p class="card-desc">Wireless Bluetooth diagnostic scanner pulls live ECU fault codes the moment a car enters the bay.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-emerald">📱</div>
+          <h3 class="card-title">Customer App</h3>
+          <p class="card-desc">React Native mobile app for owners to track live repair stages and approve parts estimates digitally.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon icon-purple">💬</div>
+          <h3 class="card-title">WhatsApp Bot</h3>
+          <p class="card-desc">Twilio API integration auto-sends gate entry confirmations and final PDF invoice receipts via WhatsApp.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="slide-counter">SLIDE <span id="currentSlideNum">01</span> / 10</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="nav-arrows">
+      <button class="arrow-btn" onclick="prevSlide()" title="Previous (Left Arrow)">◀</button>
+      <button class="arrow-btn" onclick="nextSlide()" title="Next (Right Arrow / Space)">▶</button>
+    </div>
+  </footer>
+
+  <!-- Overview Modal -->
+  <div id="overviewModal">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="font-size: 22px; font-weight: 700;">SLIDE OVERVIEW</h2>
+      <button class="ctrl-btn" onclick="toggleOverview()">✕ Close (Esc)</button>
+    </div>
+    <div class="overview-grid" id="overviewGrid"></div>
+  </div>
+
+  <script>
+    // Audio Synthesizer for subtle futuristic clicks
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 520, duration = 0.04) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // Slide Engine
+    let currentSlide = 1;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const currentNumEl = document.getElementById('currentSlideNum');
+    const progressFillEl = document.getElementById('progressFill');
+
+    function updateSlide(newIndex) {
+      if (newIndex < 1 || newIndex > totalSlides) return;
+      playBeep(440 + newIndex * 40, 0.05);
+
+      slides.forEach(slide => {
+        const idx = parseInt(slide.getAttribute('data-index'));
+        slide.classList.remove('active', 'prev');
+        if (idx === newIndex) {
+          slide.classList.add('active');
+        } else if (idx < newIndex) {
+          slide.classList.add('prev');
+        }
+      });
+
+      currentSlide = newIndex;
+      currentNumEl.textContent = String(currentSlide).padStart(2, '0');
+      progressFillEl.style.width = ((currentSlide / totalSlides) * 100) + '%';
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) updateSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) updateSlide(currentSlide - 1);
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'o' || e.key === 'O') {
+        toggleOverview();
+      } else if (e.key === 'Escape') {
+        document.getElementById('overviewModal').classList.remove('show');
+      }
+    });
+
+    // Fullscreen Toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Overview Grid
+    const overviewModal = document.getElementById('overviewModal');
+    const overviewGrid = document.getElementById('overviewGrid');
+
+    function initOverview() {
+      overviewGrid.innerHTML = '';
+      slides.forEach((slide, i) => {
+        const title = slide.querySelector('.slide-title, .hero-title').innerText;
+        const card = document.createElement('div');
+        card.className = `thumb-card ${i + 1 === currentSlide ? 'active' : ''}`;
+        card.innerHTML = `
+          <div class="thumb-num">SLIDE ${String(i + 1).padStart(2, '0')}</div>
+          <div class="thumb-title">${title}</div>
+        `;
+        card.onclick = () => {
+          updateSlide(i + 1);
+          toggleOverview();
+        };
+        overviewGrid.appendChild(card);
+      });
+    }
+
+    function toggleOverview() {
+      initOverview();
+      overviewModal.classList.toggle('show');
+    }
+
+    // Subtle Ambient Floating Particles on Canvas
+    const canvas = document.getElementById('ambientCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    const particles = [];
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 45; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 2 + 1,
+        color: Math.random() > 0.5 ? 'rgba(6, 182, 212, ' : 'rgba(59, 130, 246, '
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        ctx.fillStyle = p.color + '0.4)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

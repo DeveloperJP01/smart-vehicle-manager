@@ -16,7 +16,7 @@ public class InventoryController {
     
     @Autowired private InventoryRepository repo;
     @Autowired private PartOrderRepository orderRepo;
-    @Autowired private MerchantRepository merchantRepo;
+    @Autowired private VendorRepository vendorRepo;
 
     @GetMapping
     public List<InventoryItem> getAll() { 
@@ -43,7 +43,20 @@ public class InventoryController {
         if (ticketId != null) {
             ServiceTicket ticket = ticketRepo.findById(ticketId).orElse(null);
             if (ticket != null) {
-                ticket.setEstimatedCost((ticket.getEstimatedCost() == null ? 0 : ticket.getEstimatedCost()) + (item.getPrice() * quantity));
+                double partTotal = item.getPrice() * quantity;
+                double curParts = ticket.getPartsCost() != null ? ticket.getPartsCost() : 0.0;
+                double curService = ticket.getServiceCost() != null ? ticket.getServiceCost() : (ticket.getEstimatedCost() != null ? ticket.getEstimatedCost() : 0.0);
+                
+                ticket.setPartsCost(curParts + partTotal);
+                ticket.setServiceCost(curService);
+                ticket.setEstimatedCost(curService + ticket.getPartsCost());
+
+                String partEntry = item.getPartName() + " (x" + quantity + ") - Rs. " + String.format("%.2f", partTotal);
+                if (ticket.getPartsUsedDescription() == null || ticket.getPartsUsedDescription().trim().isEmpty()) {
+                    ticket.setPartsUsedDescription(partEntry);
+                } else {
+                    ticket.setPartsUsedDescription(ticket.getPartsUsedDescription() + "\n" + partEntry);
+                }
                 ticketRepo.save(ticket);
             }
         }
@@ -67,11 +80,11 @@ public class InventoryController {
         order.setOrderDate(LocalDateTime.now());
         if (order.getStatus() == null) order.setStatus("Pending");
         if (order.getGeneration() == null) order.setGeneration("Manual");
-        if (order.getMerchant() != null && order.getMerchant().getId() != null) {
-            order.setMerchant(merchantRepo.findById(order.getMerchant().getId()).orElse(null));
+        if (order.getVendor() != null && order.getVendor().getId() != null) {
+            order.setVendor(vendorRepo.findById(order.getVendor().getId()).orElse(null));
         }
         orderRepo.save(order);
-        return ResponseEntity.ok(Map.of("message", "Order placed with merchant successfully."));
+        return ResponseEntity.ok(Map.of("message", "Order placed with vendor successfully."));
     }
 
     @PutMapping("/orders/{id}/status")

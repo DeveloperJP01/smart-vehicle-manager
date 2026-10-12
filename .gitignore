@@ -5,6 +5,15 @@ target/
 # React Folders
 frontend/node_modules/
 
+# Python Cache
+__pycache__/
+*.pyc
+alpr-engine/__pycache__/
+
 # IDE Folders
 .idea/
 .vscode/
+*.locked
+
+# Archived helper/patch scripts
+scripts_archive/

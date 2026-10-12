@@ -1,0 +1,57 @@
+/* ==========================================================================
+   THEME 2: SPATIAL GLASSMORPHISM
+   Design Tokens & Variables (Dark Rich Wine / Deep Crimson Palette)
+   ========================================================================== */
+
+:root, [data-theme="glass"] {
+  /* Translucent Surface Panels (Deep Twilight Slate Ink Base) */
+  --bg-surface: rgba(15, 23, 42, 0.65);
+  --bg-surface-subtle: rgba(255, 255, 255, 0.05);
+  --bg-surface-elevated: rgba(22, 30, 52, 0.75);
+  --bg-surface-card: rgba(15, 23, 42, 0.65);
+  --bg-surface-hover: rgba(190, 18, 60, 0.08);
+
+  /* Frosted Glass Optics (Increased by 35% over 14px/8px/20px baseline) */
+  --glass-blur: blur(19px);
+  --glass-blur-sm: blur(11px);
+  --glass-blur-lg: blur(27px);
+
+  /* Edge Highlights (1px Semi-Transparent Platinum & Dark Crimson Glints) */
+  --border-accent: 1px solid rgba(255, 255, 255, 0.14);
+  --border-highlight: 1px solid rgba(190, 18, 60, 0.5);
+  --border-subtle: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Depth & Drop Shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  --shadow-glass-lg: 0 16px 48px 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(190, 18, 60, 0.3);
+  --shadow-glass-sm: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
+
+  /* Typography & Readability (Platinum White & Cool Silver) */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Deep Rich Wine / Dark Crimson Supercar Accents */
+  --accent-primary: #9f1239;
+  --accent-hover: #be123c;
+  --accent-glow: 0 0 20px rgba(159, 18, 57, 0.5);
+  --gradient-accent: linear-gradient(135deg, #9f1239 0%, #881337 50%, #4c0519 100%);
+  --gradient-accent-hover: linear-gradient(135deg, #be123c 0%, #9f1239 50%, #5c071d 100%);
+
+  /* Status Pill Badges (Strict Palette: Dark Red, White, Grey, Black) */
+  --badge-complete: #881337;
+  --badge-ongoing: #475569;
+  --badge-critical: #9f1239;
+  --badge-info: #334155;
+
+  /* Seamless Backward Compatibility Overrides */
+  --white: #ffffff;
+  --light-grey: rgba(255, 255, 255, 0.06);
+  --mid-grey: rgba(255, 255, 255, 0.12);
+  --dark-grey: #94a3b8;
+  --black: #f8fafc;
+  --text-grey: #94a3b8;
+  --gradient-maroon: linear-gradient(135deg, #9f1239 0%, #4c0519 100%);
+  --gradient-hover: linear-gradient(135deg, #be123c 0%, #700a24 100%);
+  --maroon: #9f1239;
+}

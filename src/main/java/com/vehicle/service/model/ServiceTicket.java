@@ -11,6 +11,10 @@ public class ServiceTicket {
     private String priority; private Double estimatedCost;
     @Column(length = 500) private String aftermarketMods;
     @Lob @Column(columnDefinition = "LONGBLOB") private byte[] referencePhoto;
+    @Column(name = "parts_used_description", columnDefinition = "TEXT") private String partsUsedDescription;
+    @Column(name = "service_cost") private Double serviceCost;
+    @Column(name = "parts_cost") private Double partsCost;
+    @Column(name = "payment_status") private String paymentStatus;
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
     public User getCustomer() { return customer; } public void setCustomer(User customer) { this.customer = customer; }
     public Vehicle getVehicle() { return vehicle; } public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
@@ -23,4 +27,8 @@ public class ServiceTicket {
     public Double getEstimatedCost() { return estimatedCost; } public void setEstimatedCost(Double estimatedCost) { this.estimatedCost = estimatedCost; }
     public String getAftermarketMods() { return aftermarketMods; } public void setAftermarketMods(String aftermarketMods) { this.aftermarketMods = aftermarketMods; }
     public byte[] getReferencePhoto() { return referencePhoto; } public void setReferencePhoto(byte[] referencePhoto) { this.referencePhoto = referencePhoto; }
+    public String getPartsUsedDescription() { return partsUsedDescription; } public void setPartsUsedDescription(String partsUsedDescription) { this.partsUsedDescription = partsUsedDescription; }
+    public Double getServiceCost() { return serviceCost; } public void setServiceCost(Double serviceCost) { this.serviceCost = serviceCost; }
+    public Double getPartsCost() { return partsCost; } public void setPartsCost(Double partsCost) { this.partsCost = partsCost; }
+    public String getPaymentStatus() { return paymentStatus; } public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 }

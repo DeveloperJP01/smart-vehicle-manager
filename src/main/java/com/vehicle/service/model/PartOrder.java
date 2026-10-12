@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 @Entity @Table(name = "part_orders")
 public class PartOrder {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
-    @ManyToOne @JoinColumn(name = "merchant_id") private Merchant merchant;
+    @ManyToOne @JoinColumn(name = "vendor_id") private Vendor vendor;
+    private String vendorName;
     private String partName;
     private String serialNumber;
     private int quantity;
@@ -14,7 +15,9 @@ public class PartOrder {
     private String generation; // "Manual", "Automated"
     
     public Long getId() { return id; } public void setId(Long id) { this.id = id; }
-    public Merchant getMerchant() { return merchant; } public void setMerchant(Merchant merchant) { this.merchant = merchant; }
+    public Vendor getVendor() { return vendor; } public void setVendor(Vendor vendor) { this.vendor = vendor; }
+    public String getVendorName() { return vendorName != null ? vendorName : (vendor != null ? vendor.getName() : null); }
+    public void setVendorName(String vendorName) { this.vendorName = vendorName; }
     public String getPartName() { return partName; } public void setPartName(String partName) { this.partName = partName; }
     public String getSerialNumber() { return serialNumber; } public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
     public int getQuantity() { return quantity; } public void setQuantity(int quantity) { this.quantity = quantity; }

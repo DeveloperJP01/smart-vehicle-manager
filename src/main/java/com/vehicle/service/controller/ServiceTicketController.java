@@ -22,22 +22,43 @@ public class ServiceTicketController {
         return userRepo.save(user);
     }
 
-    
-    @DeleteMapping("/users/{id}") public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        try { 
-            // 1. Find all vehicles owned by this driver
-            List<Vehicle> vehicles = new java.util.ArrayList<>();
-            for (Vehicle v : vehicles) {
-                // 2. Delete all tickets for each vehicle
-                List<ServiceTicket> tickets = ticketRepo.findAll().stream().filter(t -> t.getVehicle().getId().equals(v.getId())).collect(Collectors.toList());
-                ticketRepo.deleteAll(tickets);
+    @PutMapping("/users/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User req) {
+        return userRepo.findById(id).map(u -> {
+            if (req.getUsername() != null && !req.getUsername().isEmpty()) u.setUsername(req.getUsername());
+            if (req.getPassword() != null && !req.getPassword().trim().isEmpty()) {
+                u.setPassword(passwordEncoder.encode(req.getPassword()));
             }
-            // 3. Delete the vehicles, then the driver
-            vehicleRepo.deleteAll(vehicles);
-            userRepo.deleteById(id); 
-            return ResponseEntity.ok().build(); 
+            if (req.getRole() != null) u.setRole(req.getRole());
+            if (req.getFullName() != null) u.setFullName(req.getFullName());
+            if (req.getSecurityQuestion() != null) u.setSecurityQuestion(req.getSecurityQuestion());
+            if (req.getSecurityAnswer() != null) u.setSecurityAnswer(req.getSecurityAnswer());
+            return ResponseEntity.ok(userRepo.save(u));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/users/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try { 
+            User user = userRepo.findById(id).orElse(null);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+            if ("admin".equalsIgnoreCase(user.getUsername())) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("error", "SECURITY ALERT: You cannot delete the Master Admin account."));
+            }
+
+            // Disassociate user from all service tickets (both as assigned mechanic and customer)
+            ticketRepo.unassignMechanic(id);
+            ticketRepo.unassignCustomer(id);
+
+            userRepo.delete(user); 
+            return ResponseEntity.ok(java.util.Map.of("message", "User deleted successfully.")); 
         } 
-        catch (Exception e) { return ResponseEntity.badRequest().body("Failed to delete driver."); }
+        catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Failed to delete user: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/vehicles") public List<Vehicle> getAllVehicles() { return vehicleRepo.findAll(); }
@@ -46,6 +67,22 @@ public class ServiceTicketController {
         int odo = req.getCurrentOdometer() != null ? req.getCurrentOdometer() : 0;
         req.setCurrentOdometer(odo); req.setLastOilOdometer(odo); req.setLastBrakeOdometer(odo); req.setLastTireOdometer(odo);
         return vehicleRepo.save(req);
+    }
+
+    @PutMapping("/vehicles/{id}")
+    public ResponseEntity<Vehicle> updateVehicle(@PathVariable Long id, @RequestBody Vehicle req) {
+        return vehicleRepo.findById(id).map(v -> {
+            v.setMakeAndModel(req.getMakeAndModel());
+            v.setLicensePlate(req.getLicensePlate());
+            v.setOwnerName(req.getOwnerName());
+            v.setOwnerPhone(req.getOwnerPhone());
+            v.setColor(req.getColor());
+            v.setVehicleType(req.getVehicleType());
+            v.setChassisNumber(req.getChassisNumber());
+            v.setEngineNumber(req.getEngineNumber());
+            if (req.getCurrentOdometer() != null) v.setCurrentOdometer(req.getCurrentOdometer());
+            return ResponseEntity.ok(vehicleRepo.save(v));
+        }).orElse(ResponseEntity.notFound().build());
     }
     
     @DeleteMapping("/vehicles/{id}") public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
@@ -79,16 +116,48 @@ public class ServiceTicketController {
         ticket.setServiceType(req.getServiceType()); ticket.setAppointmentDate(req.getAppointmentDate());
         ticket.setAppointmentTime(req.getAppointmentTime());
         ticket.setAftermarketMods(req.getAftermarketMods()); ticket.setStatus("Pending");
+        ticket.setPaymentStatus("UNPAID");
         
         double cost = 0.0;
-        if ("Minor service".equalsIgnoreCase(req.getServiceType())) cost = 468.0;
-        else if ("Half service".equalsIgnoreCase(req.getServiceType())) cost = 1075.0;
-        else if ("Major service".equalsIgnoreCase(req.getServiceType())) cost = 1652.0;
-        else if ("Full Service".equalsIgnoreCase(req.getServiceType())) cost = 2375.0;
-        else cost = Math.round((Math.random() * 4000 + 1000) * 100.0) / 100.0; // fallback
+        if (req.getServiceCharges() != null && req.getServiceCharges() > 0) {
+            cost = req.getServiceCharges();
+        } else if ("Minor service".equalsIgnoreCase(req.getServiceType())) cost = 4800.0;
+        else if ("Half service".equalsIgnoreCase(req.getServiceType())) cost = 12500.0;
+        else if ("Major service".equalsIgnoreCase(req.getServiceType())) cost = 24000.0;
+        else if ("Full Service".equalsIgnoreCase(req.getServiceType())) cost = 38500.0;
+        else cost = Math.round((Math.random() * 15000 + 5000) * 100.0) / 100.0; // fallback
 
+        ticket.setServiceCost(cost);
+        ticket.setPartsCost(0.0);
         ticket.setEstimatedCost(cost);
         if (req.getReferencePhoto() != null && !req.getReferencePhoto().isEmpty()) ticket.setReferencePhoto(req.getReferencePhoto().getBytes());
+        return ticketRepo.save(ticket);
+    }
+
+    @PutMapping("/services/{id}/pay")
+    public ServiceTicket markAsPaid(@PathVariable Long id) {
+        ServiceTicket ticket = ticketRepo.findById(id).orElseThrow();
+        ticket.setPaymentStatus("PAID");
+        ticket.setStatus("Completed");
+        Vehicle v = ticket.getVehicle();
+        if (v != null) {
+            String type = ticket.getServiceType() != null ? ticket.getServiceType().toLowerCase() : "";
+            if (type.contains("oil") || type.contains("engine")) v.setLastOilOdometer(v.getCurrentOdometer());
+            if (type.contains("brake")) v.setLastBrakeOdometer(v.getCurrentOdometer());
+            if (type.contains("tire")) v.setLastTireOdometer(v.getCurrentOdometer());
+            vehicleRepo.save(v);
+        }
+        return ticketRepo.save(ticket);
+    }
+
+    @PutMapping("/services/{id}/payment-status")
+    public ServiceTicket updatePaymentStatus(@PathVariable Long id, @RequestBody String paymentStatus) {
+        ServiceTicket ticket = ticketRepo.findById(id).orElseThrow();
+        String cleaned = paymentStatus.replace("\"", "").trim();
+        ticket.setPaymentStatus(cleaned);
+        if ("PAID".equalsIgnoreCase(cleaned)) {
+            ticket.setStatus("Completed");
+        }
         return ticketRepo.save(ticket);
     }
 
@@ -98,11 +167,13 @@ public class ServiceTicketController {
         ticket.setStatus(status); 
         if (status.equalsIgnoreCase("Completed")) {
             Vehicle v = ticket.getVehicle();
-            String type = ticket.getServiceType().toLowerCase();
-            if (type.contains("oil") || type.contains("engine")) v.setLastOilOdometer(v.getCurrentOdometer());
-            if (type.contains("brake")) v.setLastBrakeOdometer(v.getCurrentOdometer());
-            if (type.contains("tire")) v.setLastTireOdometer(v.getCurrentOdometer());
-            vehicleRepo.save(v);
+            if (v != null) {
+                String type = ticket.getServiceType() != null ? ticket.getServiceType().toLowerCase() : "";
+                if (type.contains("oil") || type.contains("engine")) v.setLastOilOdometer(v.getCurrentOdometer());
+                if (type.contains("brake")) v.setLastBrakeOdometer(v.getCurrentOdometer());
+                if (type.contains("tire")) v.setLastTireOdometer(v.getCurrentOdometer());
+                vehicleRepo.save(v);
+            }
         }
         return ticketRepo.save(ticket);
     }

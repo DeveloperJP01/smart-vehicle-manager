@@ -11,7 +11,7 @@ import java.io.IOException;
 @RestController @RequestMapping("/api/registry")
 public class RegistryController {
     @Autowired private MechanicRepository mechanicRepo;
-    @Autowired private MerchantRepository merchantRepo;
+    @Autowired private VendorRepository vendorRepo;
     @Autowired private EmployeeRepository employeeRepo;
     @Autowired private GarageRepository garageRepo;
 
@@ -21,15 +21,35 @@ public class RegistryController {
         mechanicRepo.deleteById(id); return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/merchants") public List<Merchant> getMerchants() { return merchantRepo.findAll(); }
-    @PostMapping("/merchants") public Merchant addMerchant(@RequestBody Merchant m) { return merchantRepo.save(m); }
-    @DeleteMapping("/merchants/{id}") public ResponseEntity<?> deleteMerchant(@PathVariable Long id) {
-        merchantRepo.deleteById(id); return ResponseEntity.ok().build();
+    @GetMapping("/vendors") public List<Vendor> getVendors() { return vendorRepo.findAll(); }
+    @PostMapping("/vendors") public Vendor addVendor(@RequestBody Vendor v) { return vendorRepo.save(v); }
+    @PutMapping("/vendors/{id}") public ResponseEntity<Vendor> updateVendor(@PathVariable Long id, @RequestBody Vendor v) {
+        return vendorRepo.findById(id).map(ex -> {
+            ex.setName(v.getName());
+            ex.setPhoneNumber(v.getPhoneNumber());
+            ex.setEmail(v.getEmail());
+            ex.setAddress(v.getAddress());
+            ex.setSite(v.getSite());
+            return ResponseEntity.ok(vendorRepo.save(ex));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+    @DeleteMapping("/vendors/{id}") public ResponseEntity<?> deleteVendor(@PathVariable Long id) {
+        vendorRepo.deleteById(id); return ResponseEntity.ok().build();
     }
 
     @GetMapping("/garages") public List<Garage> getGarages() { return garageRepo.findAll(); }
     @PostMapping("/garages") public Garage saveGarage(@RequestBody Garage g) { 
-        garageRepo.deleteAll(); // Keep single garage logic
+        List<Garage> list = garageRepo.findAll();
+        if (!list.isEmpty()) {
+            Garage ex = list.get(0);
+            ex.setName(g.getName());
+            ex.setBranchName(g.getBranchName());
+            ex.setAddress(g.getAddress());
+            ex.setPhone(g.getPhone());
+            ex.setEmail(g.getEmail());
+            ex.setGstin(g.getGstin());
+            return garageRepo.save(ex);
+        }
         return garageRepo.save(g); 
     }
 
@@ -58,6 +78,37 @@ public class RegistryController {
         if(bankPassbook != null) e.setBankPassbook(bankPassbook.getBytes());
         if(experienceLetter != null) e.setExperienceLetter(experienceLetter.getBytes());
         return employeeRepo.save(e); 
+    }
+    @PostMapping("/employees/{id}") 
+    public ResponseEntity<Employee> updateEmployee(
+        @PathVariable Long id,
+        @RequestParam("name") String name,
+        @RequestParam("post") String post,
+        @RequestParam("salary") Double salary,
+        @RequestParam("phone") String phone,
+        @RequestParam("email") String email,
+        @RequestParam("address") String address,
+        @RequestParam(value="aadharCard", required=false) MultipartFile aadharCard,
+        @RequestParam(value="panCard", required=false) MultipartFile panCard,
+        @RequestParam(value="resume", required=false) MultipartFile resume,
+        @RequestParam(value="photo", required=false) MultipartFile photo,
+        @RequestParam(value="bankPassbook", required=false) MultipartFile bankPassbook,
+        @RequestParam(value="experienceLetter", required=false) MultipartFile experienceLetter
+    ) throws IOException { 
+        return employeeRepo.findById(id).map(e -> {
+            e.setName(name); e.setPost(post); e.setSalary(salary); e.setPhone(phone); e.setEmail(email); e.setAddress(address);
+            try {
+                if(aadharCard != null && !aadharCard.isEmpty()) e.setAadharCard(aadharCard.getBytes());
+                if(panCard != null && !panCard.isEmpty()) e.setPanCard(panCard.getBytes());
+                if(resume != null && !resume.isEmpty()) e.setResume(resume.getBytes());
+                if(photo != null && !photo.isEmpty()) e.setPhoto(photo.getBytes());
+                if(bankPassbook != null && !bankPassbook.isEmpty()) e.setBankPassbook(bankPassbook.getBytes());
+                if(experienceLetter != null && !experienceLetter.isEmpty()) e.setExperienceLetter(experienceLetter.getBytes());
+            } catch(IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            return ResponseEntity.ok(employeeRepo.save(e));
+        }).orElse(ResponseEntity.notFound().build());
     }
     @DeleteMapping("/employees/{id}") public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
         employeeRepo.deleteById(id); return ResponseEntity.ok().build();
