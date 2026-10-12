@@ -2,6 +2,12 @@
 target/
 *.log
 
+# Local secrets & credentials (NEVER commit to Git)
+application-local.properties
+src/main/resources/application-local.properties
+config/
+.env
+
 # React Folders
 frontend/node_modules/
 
