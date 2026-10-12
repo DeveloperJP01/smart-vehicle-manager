@@ -7,6 +7,7 @@ application-local.properties
 src/main/resources/application-local.properties
 config/
 .env
+*.sql
 
 # React Folders
 frontend/node_modules/
