@@ -1,6 +1,7 @@
 package com.vehicle.service.security;
 
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.*; 
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -28,10 +29,10 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/services/*/photo", "/", "/index.html", "/static/**").permitAll()
-                
-                // --- THIS IS THE LINE WE FIXED ---
-                .requestMatchers("/api/services/**", "/api/users/**", "/api/vehicles/**", "/api/registry/**").authenticated()
-                
+                .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("OWNER", "MANAGER", "EMPLOYEE", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("OWNER", "MANAGER", "EMPLOYEE", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("OWNER", "MANAGER", "EMPLOYEE", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyRole("OWNER", "MANAGER", "EMPLOYEE", "ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

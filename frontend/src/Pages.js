@@ -103,7 +103,8 @@ export const Overview = ({ token }) => {
     </div>
   );
 };
-export const Vehicles = ({ token }) => {
+export const Vehicles = ({ token, userRole }) => {
+  const isViewer = userRole?.toUpperCase() === 'VIEWER';
   const [vehicles, setVehicles] = React.useState([]);
   const [formData, setFormData] = React.useState({ ownerName: '', ownerPhone: '', vehicleType: '', makeAndModel: '', licensePlate: '', color: '', chassisNumber: '', engineNumber: '', currentOdometer: '' });
   const [editingVehicleId, setEditingVehicleId] = React.useState(null);
@@ -140,6 +141,7 @@ export const Vehicles = ({ token }) => {
   }, []);
 
   const handleStartEdit = (v) => {
+    if (isViewer) return;
     setEditingVehicleId(v.id);
     setFormData({
       ownerName: v.ownerName || '',
@@ -162,6 +164,7 @@ export const Vehicles = ({ token }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isViewer) return;
     try {
       const payload = { ...formData, currentOdometer: Number(formData.currentOdometer) };
       const url = editingVehicleId ? `/api/vehicles/${editingVehicleId}` : '/api/vehicles';
@@ -178,6 +181,7 @@ export const Vehicles = ({ token }) => {
   };
 
   const handleDelete = async (id) => {
+    if (isViewer) return;
     if(!window.confirm('Delete vehicle?')) return;
     try {
       const res = await fetch('/api/vehicles/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
@@ -190,29 +194,38 @@ export const Vehicles = ({ token }) => {
 
   return (
     <div>
-      <div className="page-header"><h1>🚘 Vehicles Dashboard</h1></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>🚘 Vehicles Dashboard</h1>
+        {isViewer && (
+          <span className="badge" style={{ background: '#1e293b', color: '#93c5fd', border: '1px solid #3b82f6', padding: '6px 14px', borderRadius: '8px', fontSize: '12px' }}>
+            👀 Viewer Mode (Read-Only)
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isViewer ? '1fr' : '320px 1fr', gap: '24px', alignItems: 'start' }}>
         
-        <div className="data-card" style={{ padding: '24px' }}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-subtle)', paddingBottom:'10px', marginBottom:'14px'}}>
-            <h2 style={{margin:0, fontSize:'1.15em'}}>{editingVehicleId ? 'Edit Vehicle Details' : 'Register Vehicle'}</h2>
-            {editingVehicleId && (
-              <button type="button" onClick={handleCancelEdit} className="badge" style={{background: 'var(--badge-warning)', padding: '4px 10px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
-            )}
+        {!isViewer && (
+          <div className="data-card" style={{ padding: '24px' }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-subtle)', paddingBottom:'10px', marginBottom:'14px'}}>
+              <h2 style={{margin:0, fontSize:'1.15em'}}>{editingVehicleId ? 'Edit Vehicle Details' : 'Register Vehicle'}</h2>
+              {editingVehicleId && (
+                <button type="button" onClick={handleCancelEdit} className="badge" style={{background: 'var(--badge-warning)', padding: '4px 10px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
+              )}
+            </div>
+            <form onSubmit={handleSubmit} style={{padding:0, gap:'12px', display:'flex', flexDirection:'column'}}>
+              <div className="input-group"><label>Owner Name</label><input placeholder="e.g. Rahul Sharma" value={formData.ownerName} onChange={e => setFormData({...formData, ownerName: e.target.value})} required style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Owner Phone</label><input placeholder="e.g. 9876543210" value={formData.ownerPhone} onChange={e => setFormData({...formData, ownerPhone: e.target.value})} required style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Vehicle Type</label><select value={formData.vehicleType} onChange={e => setFormData({...formData, vehicleType: e.target.value})} required style={{padding:'10px'}}><option value="">-- Select Type --</option><option value="Motorbike">Motorbike</option><option value="Scooter">Scooter</option><option value="Car">Car</option><option value="Heavy Vehicle">Heavy Vehicle</option></select></div>
+              <div className="input-group"><label>Make & Model</label><input placeholder="e.g. Yamaha FZ-X" value={formData.makeAndModel} onChange={e => setFormData({...formData, makeAndModel: e.target.value})} required style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>License Plate</label><input placeholder="e.g. MH-15-AB-1234" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value})} required style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Color</label><input placeholder="e.g. Matt Copper" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} required style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Chassis Number (Optional)</label><input placeholder="e.g. VGS123456" value={formData.chassisNumber} onChange={e => setFormData({...formData, chassisNumber: e.target.value})} style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Engine Number (Optional)</label><input placeholder="e.g. ENG98765" value={formData.engineNumber} onChange={e => setFormData({...formData, engineNumber: e.target.value})} style={{padding:'10px'}} /></div>
+              <div className="input-group"><label>Current Odometer</label><input type="number" placeholder="e.g. 15000" value={formData.currentOdometer} onChange={e => setFormData({...formData, currentOdometer: e.target.value})} required style={{padding:'10px'}} /></div>
+              <button type="submit" className="primary" style={{marginTop:'10px', padding:'12px'}}>{editingVehicleId ? 'Save Changes' : 'Register Vehicle'}</button>
+            </form>
           </div>
-          <form onSubmit={handleSubmit} style={{padding:0, gap:'12px', display:'flex', flexDirection:'column'}}>
-            <div className="input-group"><label>Owner Name</label><input placeholder="e.g. Rahul Sharma" value={formData.ownerName} onChange={e => setFormData({...formData, ownerName: e.target.value})} required style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Owner Phone</label><input placeholder="e.g. 9876543210" value={formData.ownerPhone} onChange={e => setFormData({...formData, ownerPhone: e.target.value})} required style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Vehicle Type</label><select value={formData.vehicleType} onChange={e => setFormData({...formData, vehicleType: e.target.value})} required style={{padding:'10px'}}><option value="">-- Select Type --</option><option value="Motorbike">Motorbike</option><option value="Scooter">Scooter</option><option value="Car">Car</option><option value="Heavy Vehicle">Heavy Vehicle</option></select></div>
-            <div className="input-group"><label>Make & Model</label><input placeholder="e.g. Yamaha FZ-X" value={formData.makeAndModel} onChange={e => setFormData({...formData, makeAndModel: e.target.value})} required style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>License Plate</label><input placeholder="e.g. MH-15-AB-1234" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value})} required style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Color</label><input placeholder="e.g. Matt Copper" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} required style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Chassis Number (Optional)</label><input placeholder="e.g. VGS123456" value={formData.chassisNumber} onChange={e => setFormData({...formData, chassisNumber: e.target.value})} style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Engine Number (Optional)</label><input placeholder="e.g. ENG98765" value={formData.engineNumber} onChange={e => setFormData({...formData, engineNumber: e.target.value})} style={{padding:'10px'}} /></div>
-            <div className="input-group"><label>Current Odometer</label><input type="number" placeholder="e.g. 15000" value={formData.currentOdometer} onChange={e => setFormData({...formData, currentOdometer: e.target.value})} required style={{padding:'10px'}} /></div>
-            <button type="submit" className="primary" style={{marginTop:'10px', padding:'12px'}}>{editingVehicleId ? 'Save Changes' : 'Register Vehicle'}</button>
-          </form>
-        </div>
+        )}
 
         <div className="data-card">
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
@@ -237,11 +250,11 @@ export const Vehicles = ({ token }) => {
                   <th style={{padding:'12px'}}>Chassis / Engine</th>
                   <th style={{padding:'12px'}}>Owner Name</th>
                   <th style={{padding:'12px'}}>Phone</th>
-                  <th style={{padding:'12px', textAlign: 'center'}}>Action</th>
+                  {!isViewer && <th style={{padding:'12px', textAlign: 'center'}}>Action</th>}
                 </tr>
               </thead>
               <tbody>
-                {filteredVehicles?.length === 0 ? <tr><td colSpan="7" style={{padding:'20px', textAlign:'center'}}>No vehicles registered yet.</td></tr> : null}
+                {filteredVehicles?.length === 0 ? <tr><td colSpan={isViewer ? "6" : "7"} style={{padding:'20px', textAlign:'center'}}>No vehicles registered yet.</td></tr> : null}
                 {filteredVehicles?.map(v => (
                   <tr key={v.id} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                     <td style={{padding:'12px', fontWeight:'bold'}}>{v.licensePlate}</td>
@@ -250,12 +263,14 @@ export const Vehicles = ({ token }) => {
                     <td style={{padding:'12px'}}>{v.chassisNumber || 'N/A'} <br/> {v.engineNumber || 'N/A'}</td>
                     <td style={{padding:'12px'}}>{v.ownerName || "N/A"}</td>
                     <td style={{padding:'12px'}}>{v.ownerPhone || "N/A"}</td>
-                    <td style={{padding:'12px'}}>
-                      <div style={{display:'flex', gap:'8px', justifyContent:'center', alignItems:'center'}}>
-                        <button onClick={() => handleStartEdit(v)} className="badge" style={{background: 'var(--badge-info)', minWidth:'65px', padding:'6px 12px', cursor:'pointer'}}>Edit</button>
-                        <button onClick={() => handleDelete(v.id)} className="badge" style={{background: 'var(--badge-critical)', minWidth:'65px', padding:'6px 12px', cursor:'pointer'}}>Delete</button>
-                      </div>
-                    </td>
+                    {!isViewer && (
+                      <td style={{padding:'12px'}}>
+                        <div style={{display:'flex', gap:'8px', justifyContent:'center', alignItems:'center'}}>
+                          <button onClick={() => handleStartEdit(v)} className="badge" style={{background: 'var(--badge-info)', minWidth:'65px', padding:'6px 12px', cursor:'pointer'}}>Edit</button>
+                          <button onClick={() => handleDelete(v.id)} className="badge" style={{background: 'var(--badge-critical)', minWidth:'65px', padding:'6px 12px', cursor:'pointer'}}>Delete</button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -385,6 +400,7 @@ export const Alerts = ({ token }) => {
   );
 };
 export const Maintenance = ({ token, userRole }) => {
+  const isViewer = userRole?.toUpperCase() === 'VIEWER';
   const [vehicles, setVehicles] = React.useState([]); 
   const [tickets, setTickets] = React.useState([]);
   const [parts, setParts] = React.useState([]);
@@ -553,104 +569,115 @@ export const Maintenance = ({ token, userRole }) => {
 
   return (
     <div>
-      <div className="page-header"><h1>🔧 Maintenance Operations</h1></div>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>🔧 Maintenance Operations</h1>
+        {isViewer && (
+          <span className="badge" style={{ background: '#1e293b', color: '#93c5fd', border: '1px solid #3b82f6', padding: '6px 14px', borderRadius: '8px', fontSize: '12px' }}>
+            👀 Viewer Mode (Read-Only)
+          </span>
+        )}
+      </div>
       
       <div className="data-card" style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h2 style={{marginTop: 0, marginBottom: '20px'}}>Service Bay & Inventory Control</h2>
         
-        <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(159, 18, 57, 0.4)' }}>
-            <h3 style={{marginTop: 0}}>Schedule New Service Ticket</h3>
-            <form onSubmit={handleCreateTicket} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              
-              {/* Vehicle Select */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Vehicle (License Plate) <span style={{color:'var(--maroon)'}}>*</span></strong>
-                <input list="vehicleList" placeholder="Search & Select Vehicle" value={formData.vehicleSearch} onChange={e => setFormData({...formData, vehicleSearch: e.target.value})} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} />
-                <datalist id="vehicleList">
-                  {vehicles?.map(v => <option key={v.id} value={v.licensePlate}>{v.makeAndModel}</option>)}
-                </datalist>
-              </div>
+        {!isViewer && (
+          <>
+            <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(159, 18, 57, 0.4)' }}>
+                <h3 style={{marginTop: 0}}>Schedule New Service Ticket</h3>
+                <form onSubmit={handleCreateTicket} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  
+                  {/* Vehicle Select */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Vehicle (License Plate) <span style={{color:'var(--maroon)'}}>*</span></strong>
+                    <input list="vehicleList" placeholder="Search & Select Vehicle" value={formData.vehicleSearch} onChange={e => setFormData({...formData, vehicleSearch: e.target.value})} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} />
+                    <datalist id="vehicleList">
+                      {vehicles?.map(v => <option key={v.id} value={v.licensePlate}>{v.makeAndModel}</option>)}
+                    </datalist>
+                  </div>
 
-              {/* Name Service Type */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Name Service Type <span style={{color:'var(--maroon)'}}>*</span></strong>
-                <input 
-                  type="text" 
-                  placeholder="Enter Service Type (e.g. Major service, Brake overhaul)" 
-                  value={formData.serviceType} 
-                  onChange={e => setFormData({...formData, serviceType: e.target.value})} 
-                  required 
-                  style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} 
-                />
-              </div>
+                  {/* Name Service Type */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Name Service Type <span style={{color:'var(--maroon)'}}>*</span></strong>
+                    <input 
+                      type="text" 
+                      placeholder="Enter Service Type (e.g. Major service, Brake overhaul)" 
+                      value={formData.serviceType} 
+                      onChange={e => setFormData({...formData, serviceType: e.target.value})} 
+                      required 
+                      style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} 
+                    />
+                  </div>
 
-              {/* Service Charges */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Service Charges (₹) <span style={{color:'var(--maroon)'}}>*</span></strong>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  min="0" 
-                  placeholder="Enter Service Charges (e.g. 15000)" 
-                  value={formData.serviceCharges} 
-                  onChange={e => setFormData({...formData, serviceCharges: e.target.value})} 
-                  required 
-                  style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} 
-                />
-              </div>
-              
-              {/* Mechanic */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Mechanic Assignment</strong>
-                <input list="mechanicList" placeholder="Search and select mechanic" value={mechanicId} onChange={e => setMechanicId(e.target.value)} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} />
-                <datalist id="mechanicList">
-                  {mechanics?.map(m => <option key={m.id} value={`${m.name} - ${m.post}`} />)}
-                </datalist>
-              </div>
+                  {/* Service Charges */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Service Charges (₹) <span style={{color:'var(--maroon)'}}>*</span></strong>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      placeholder="Enter Service Charges (e.g. 15000)" 
+                      value={formData.serviceCharges} 
+                      onChange={e => setFormData({...formData, serviceCharges: e.target.value})} 
+                      required 
+                      style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} 
+                    />
+                  </div>
+                  
+                  {/* Mechanic */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Mechanic Assignment</strong>
+                    <input list="mechanicList" placeholder="Search and select mechanic" value={mechanicId} onChange={e => setMechanicId(e.target.value)} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff'}} />
+                    <datalist id="mechanicList">
+                      {mechanics?.map(m => <option key={m.id} value={`${m.name} - ${m.post}`} />)}
+                    </datalist>
+                  </div>
 
-              {/* Date */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Appointment Date <span style={{color:'var(--maroon)'}}>*</span></strong>
-                <input type="date" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff', colorScheme: 'dark'}} />
-              </div>
+                  {/* Date */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Appointment Date <span style={{color:'var(--maroon)'}}>*</span></strong>
+                    <input type="date" value={formData.appointmentDate} onChange={e => setFormData({...formData, appointmentDate: e.target.value})} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff', colorScheme: 'dark'}} />
+                  </div>
 
-              {/* Time */}
-              <div style={{display:"flex", flexDirection:"column"}}>
-                <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Appointment Time</strong>
-                <input type="time" value={formData.appointmentTime} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff', colorScheme: 'dark'}} />
-              </div>
-              
-              <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '14px', marginTop: '10px', fontSize:'15px', fontWeight:'bold', letterSpacing:'1px', textTransform:'uppercase', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>Create Service Ticket</button>
-            </form>
-        </div>
+                  {/* Time */}
+                  <div style={{display:"flex", flexDirection:"column"}}>
+                    <strong style={{marginBottom:"6px", fontSize:"13px", color:"var(--text-grey)"}}>Appointment Time</strong>
+                    <input type="time" value={formData.appointmentTime} onChange={e => setFormData({...formData, appointmentTime: e.target.value})} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', background:'rgba(255,255,255,0.05)', color:'#fff', colorScheme: 'dark'}} />
+                  </div>
+                  
+                  <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '14px', marginTop: '10px', fontSize:'15px', fontWeight:'bold', letterSpacing:'1px', textTransform:'uppercase', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>Create Service Ticket</button>
+                </form>
+            </div>
 
-        <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(159, 18, 57, 0.4)' }}>
-            <h3 style={{marginTop: 0}}>Attach Parts to Active Job</h3>
-            <form onSubmit={handleAttachPart} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              
-              <input list="activeTickets" placeholder="Search & Select Active Ticket" value={searchTicket} onChange={e => setSearchTicket(e.target.value)} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
-              <datalist id="activeTickets">
-                {tickets?.filter(t => t.status !== 'Completed')?.map(t => (
-                  <option key={t.id} value={`TKT-${t.id} - ${t.vehicle?.licensePlate}`}>{t.serviceType}</option>
-                ))}
-              </datalist>
+            <div style={{ padding: '20px', borderRadius: '16px', marginBottom: '24px', border: '1px solid rgba(159, 18, 57, 0.4)' }}>
+                <h3 style={{marginTop: 0}}>Attach Parts to Active Job</h3>
+                <form onSubmit={handleAttachPart} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  
+                  <input list="activeTickets" placeholder="Search & Select Active Ticket" value={searchTicket} onChange={e => setSearchTicket(e.target.value)} required style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
+                  <datalist id="activeTickets">
+                    {tickets?.filter(t => t.status !== 'Completed')?.map(t => (
+                      <option key={t.id} value={`TKT-${t.id} - ${t.vehicle?.licensePlate}`}>{t.serviceType}</option>
+                    ))}
+                  </datalist>
 
-              <input placeholder="Aftermarket Mods (if any)" value={aftermarketMods} onChange={e => setAftermarketMods(e.target.value)} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
+                  <input placeholder="Aftermarket Mods (if any)" value={aftermarketMods} onChange={e => setAftermarketMods(e.target.value)} style={{padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
 
-              <div style={{display: 'flex', gap: '8px', gridColumn: 'span 2'}}>
-                <input list="vaultParts" placeholder="Search & Select Part from Vault (Optional)" value={searchPart} onChange={e => setSearchPart(e.target.value)} style={{flex: 1, padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
-                <datalist id="vaultParts">
-                  {parts?.filter(p => p.stockLevel > 0)?.map(p => (
-                    <option key={p.id} value={`${p.partName} (${p.serialNumber})`}>{p.stockLevel} in stock</option>
-                  ))}
-                </datalist>
+                  <div style={{display: 'flex', gap: '8px', gridColumn: 'span 2'}}>
+                    <input list="vaultParts" placeholder="Search & Select Part from Vault (Optional)" value={searchPart} onChange={e => setSearchPart(e.target.value)} style={{flex: 1, padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
+                    <datalist id="vaultParts">
+                      {parts?.filter(p => p.stockLevel > 0)?.map(p => (
+                        <option key={p.id} value={`${p.partName} (${p.serialNumber})`}>{p.stockLevel} in stock</option>
+                      ))}
+                    </datalist>
 
-                <input type="number" min="1" value={partQuantity} onChange={e => setPartQuantity(parseInt(e.target.value))} style={{width: '70px', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
-                <button type="submit" className="primary" style={{padding: '12px 24px', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>Update Job</button>
-              </div>
+                    <input type="number" min="1" value={partQuantity} onChange={e => setPartQuantity(parseInt(e.target.value))} style={{width: '70px', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px'}} />
+                    <button type="submit" className="primary" style={{padding: '12px 24px', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>Update Job</button>
+                  </div>
 
-            </form>
-        </div>
+                </form>
+            </div>
+          </>
+        )}
 
         <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid rgba(159, 18, 57, 0.4)' }}>
             <h3 style={{marginTop: 0}}>Active Service Queue</h3>
@@ -680,10 +707,16 @@ export const Maintenance = ({ token, userRole }) => {
                             </span>
                           </td>
                           <td style={{padding: '12px', display: 'flex', gap: '6px', alignItems: 'center'}}>
-                            <button onClick={() => handlePayTicket(t.id)} style={{background: '#9f1239', color: '#fff', border: '1px solid #be123c', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'}}>Paid</button>
-                            {t.status !== 'Completed' && <button onClick={() => handleCompleteTicket(t.id)} style={{background: '#881337', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Complete</button>}
-                            <button onClick={() => handleEditTicket(t)} style={{background: '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Edit</button>
-                            {userRole === 'OWNER' && <button onClick={() => handleDeleteTicket(t.id)} style={{background: '#9f1239', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Delete</button>}
+                            {isViewer ? (
+                              <span style={{color: '#94a3b8', fontSize: '12px'}}>Read-Only</span>
+                            ) : (
+                              <>
+                                <button onClick={() => handlePayTicket(t.id)} style={{background: '#9f1239', color: '#fff', border: '1px solid #be123c', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'}}>Paid</button>
+                                {t.status !== 'Completed' && <button onClick={() => handleCompleteTicket(t.id)} style={{background: '#881337', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Complete</button>}
+                                <button onClick={() => handleEditTicket(t)} style={{background: '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Edit</button>
+                                {userRole === 'OWNER' && <button onClick={() => handleDeleteTicket(t.id)} style={{background: '#9f1239', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px'}}>Delete</button>}
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1188,7 +1221,8 @@ export const Geofences = () => (
   </div>
 );
 
-export const GateScanner = ({ token }) => {
+export const GateScanner = ({ token, userRole }) => {
+  const isViewer = userRole?.toUpperCase() === 'VIEWER';
   const webcamRef = React.useRef(null);
   const [scanResult, setScanResult] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -1371,7 +1405,17 @@ export const GateScanner = ({ token }) => {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      <div className="page-header"><h1>👁 Automated Gate Scanner & History</h1><div className="live-indicator"><div className="live-dot"></div> ALPR Active</div></div>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>👁 Automated Gate Scanner & History</h1>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {isViewer && (
+            <span className="badge" style={{ background: '#1e293b', color: '#93c5fd', border: '1px solid #3b82f6', padding: '6px 14px', borderRadius: '8px', fontSize: '12px' }}>
+              👀 Viewer Mode (Read-Only)
+            </span>
+          )}
+          <div className="live-indicator"><div className="live-dot"></div> ALPR Active</div>
+        </div>
+      </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         
@@ -1389,70 +1433,78 @@ export const GateScanner = ({ token }) => {
             />
           </div>
           
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-            <button onClick={captureAndScan} className="primary" style={{ flex: 1, padding: '14px', fontSize: '1.05em', background: '#9f1239', color: '#fff', border: '1px solid #be123c', cursor: 'pointer', borderRadius: '6px' }} disabled={isScanning}>
-              {isScanning ? 'Processing Telemetry...' : 'Engage Gate Scanner'}
-            </button>
-            <button type="button" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ padding: '14px 16px', fontSize: '0.95em', background: '#475569', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>
-              📁 Upload Photo
-            </button>
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" style={{ display: 'none' }} />
-          </div>
+          {!isViewer ? (
+            <>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                <button onClick={captureAndScan} className="primary" style={{ flex: 1, padding: '14px', fontSize: '1.05em', background: '#9f1239', color: '#fff', border: '1px solid #be123c', cursor: 'pointer', borderRadius: '6px' }} disabled={isScanning}>
+                  {isScanning ? 'Processing Telemetry...' : 'Engage Gate Scanner'}
+                </button>
+                <button type="button" onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ padding: '14px 16px', fontSize: '0.95em', background: '#475569', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>
+                  📁 Upload Photo
+                </button>
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" style={{ display: 'none' }} />
+              </div>
 
-          {/* Quick Demo Test Buttons */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Quick Test:</span>
-            {['DL-92-XQ-5578', 'DL-22-VN-3945', 'MH-70-XX-6232', 'GJ-97-OW-3970', 'TS-79-DJ-1899'].map(plate => (
-              <button
-                key={plate}
-                type="button"
-                onClick={async () => {
-                  setManualPlate(plate);
-                  setError(null);
-                  try {
-                    const res = await fetch('/api/alpr/scan', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                      body: JSON.stringify({ imageBase64: 'MANUAL', manualPlate: plate })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                      setScanResult(data);
-                      fetchServicePassport(data.licensePlate);
-                      fetchScanHistory();
-                    } else {
-                      setError(data.error);
-                    }
-                  } catch(err) {
-                    setError("Lookup failed.");
-                  }
-                }}
-                style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                {plate}
-              </button>
-            ))}
-          </div>
+              {/* Quick Demo Test Buttons */}
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', color: '#cbd5e1' }}>Quick Test:</span>
+                {['DL-92-XQ-5578', 'DL-22-VN-3945', 'MH-70-XX-6232', 'GJ-97-OW-3970', 'TS-79-DJ-1899'].map(plate => (
+                  <button
+                    key={plate}
+                    type="button"
+                    onClick={async () => {
+                      setManualPlate(plate);
+                      setError(null);
+                      try {
+                        const res = await fetch('/api/alpr/scan', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                          body: JSON.stringify({ imageBase64: 'MANUAL', manualPlate: plate })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setScanResult(data);
+                          fetchServicePassport(data.licensePlate);
+                          fetchScanHistory();
+                        } else {
+                          setError(data.error);
+                        }
+                      } catch(err) {
+                        setError("Lookup failed.");
+                      }
+                    }}
+                    style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    {plate}
+                  </button>
+                ))}
+              </div>
 
-          {/* Manual Plate Fallback Search */}
-          <form onSubmit={handleManualLookup} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-            <input 
-              placeholder="Scan or type any plate (e.g. DL-01-AB-9999)" 
-              value={manualPlate} 
-              onChange={e => setManualPlate(e.target.value)} 
-              style={{ flex: 1, padding: '10px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px' }} 
-            />
-            <button type="submit" style={{ padding: '10px 16px', fontWeight: 'bold', border: '1px solid #be123c', borderRadius: '8px', cursor: 'pointer', background: '#9f1239', color: '#ffffff' }}>
-              Scan / Lookup
-            </button>
-          </form>
+              {/* Manual Plate Fallback Search */}
+              <form onSubmit={handleManualLookup} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <input 
+                  placeholder="Scan or type any plate (e.g. DL-01-AB-9999)" 
+                  value={manualPlate} 
+                  onChange={e => setManualPlate(e.target.value)} 
+                  style={{ flex: 1, padding: '10px', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px' }} 
+                />
+                <button type="submit" style={{ padding: '10px 16px', fontWeight: 'bold', border: '1px solid #be123c', borderRadius: '8px', cursor: 'pointer', background: '#9f1239', color: '#ffffff' }}>
+                  Scan / Lookup
+                </button>
+              </form>
+            </>
+          ) : (
+            <div style={{ marginTop: '15px', padding: '14px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', color: '#93c5fd', fontSize: '13px', textAlign: 'center' }}>
+              📷 Optical feed active (Scanning, manual lookup, and registration controls are disabled in Viewer mode)
+            </div>
+          )}
 
           {scanResult && (
               <div style={{ marginTop: '15px', padding: '14px', border: `1px solid ${scanResult.status === 'UNAUTHORIZED' || scanResult.status.includes('VISITOR') ? '#9f1239' : 'rgba(255, 255, 255, 0.2)'}`, borderRadius: '8px' }}>
                 <h4 style={{ margin: '0 0 6px 0'}}>Scanned Plate: {scanResult.licensePlate}</h4>
                 <p style={{ margin: '2px 0', fontSize: '13px' }}>Owner: {scanResult.ownerName}</p>
                 <p style={{ margin: '2px 0', fontSize: '13px' }}>Status: {scanResult.status}</p>
-                {scanResult.status === 'UNAUTHORIZED' || scanResult.status.includes('VISITOR') ? (
+                {(scanResult.status === 'UNAUTHORIZED' || scanResult.status.includes('VISITOR')) && !isViewer ? (
                   <button onClick={() => window.location.hash = '#/vehicles?plate=' + scanResult.licensePlate} style={{marginTop:'10px', width:'100%', padding:'10px', background:'#9f1239', color:'#fff', border:'1px solid #be123c', borderRadius:'6px', fontWeight:'bold', cursor:'pointer', textTransform:'uppercase'}}>Register & Service</button>
                 ) : (
                   <span className="badge healthy" style={{marginTop:'8px', display:'inline-block'}}>Gate Logged</span>
@@ -1473,13 +1525,15 @@ export const GateScanner = ({ token }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <h3 style={{ margin: 0 }}>📋 Scanner History</h3>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                type="button"
-                onClick={clearLastScan} 
-                style={{ padding: '6px 12px', fontSize: '11px', background: '#9f1239', color: '#fff', border: '1px solid #be123c', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                🗑 Clear Last Scan
-              </button>
+              {!isViewer && (
+                <button 
+                  type="button"
+                  onClick={clearLastScan} 
+                  style={{ padding: '6px 12px', fontSize: '11px', background: '#9f1239', color: '#fff', border: '1px solid #be123c', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  🗑 Clear Last Scan
+                </button>
+              )}
               <button 
                 type="button"
                 onClick={exportGateLogs} 
@@ -1521,14 +1575,16 @@ export const GateScanner = ({ token }) => {
                           >
                             Passport
                           </button>
-                          <button 
-                            onClick={() => { window.location.hash = '#/maintenance?plate=' + encodeURIComponent(hist.licensePlate); }}
-                            className="badge"
-                            style={{ background: '#9f1239', minWidth: '85px', padding: '5px 10px', fontSize: '11px', cursor: 'pointer', textAlign: 'center', color: '#ffffff', border: '1px solid #be123c' }}
-                          >
-                            Create Ticket
-                          </button>
-                          {hist.status === 'UNAUTHORIZED' && (
+                          {!isViewer && (
+                            <button 
+                              onClick={() => { window.location.hash = '#/maintenance?plate=' + encodeURIComponent(hist.licensePlate); }}
+                              className="badge"
+                              style={{ background: '#9f1239', minWidth: '85px', padding: '5px 10px', fontSize: '11px', cursor: 'pointer', textAlign: 'center', color: '#ffffff', border: '1px solid #be123c' }}
+                            >
+                              Create Ticket
+                            </button>
+                          )}
+                          {!isViewer && hist.status === 'UNAUTHORIZED' && (
                             <button 
                               onClick={() => { window.location.hash = '#/vehicles?plate=' + encodeURIComponent(hist.licensePlate); }}
                               className="badge"
@@ -1577,7 +1633,8 @@ export const GateScanner = ({ token }) => {
   );
 };
 
-export const Inventory = ({ token }) => {
+export const Inventory = ({ token, userRole }) => {
+  const isViewer = userRole?.toUpperCase() === 'VIEWER';
   const [parts, setParts] = React.useState([]);
     const [mechanics, setMechanics] = React.useState([]);
   const [vendors, setVendors] = React.useState([]);
@@ -1675,125 +1732,143 @@ const handleOrder = async (e) => {
 
   return (
     <div>
-      <div className="page-header"><h1>📦 Parts Vault</h1></div>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>📦 Parts Vault</h1>
+        {isViewer && (
+          <span className="badge" style={{ background: '#1e293b', color: '#93c5fd', border: '1px solid #3b82f6', padding: '6px 14px', borderRadius: '8px', fontSize: '12px' }}>
+            👀 Viewer Mode (Read-Only)
+          </span>
+        )}
+      </div>
       <div className="data-card" style={{ maxWidth: '900px', margin: '0 auto' }}>
         
-        <h2 style={{marginTop: 0, marginBottom: '20px'}}>Add New Part to Vault</h2>
-        <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '30px' }}>
-          <input placeholder="Part Name (e.g. Brake Pads)" value={newItem.partName} onChange={e => setNewItem({...newItem, partName: e.target.value})} required style={{padding: '10px'}} />
-          <input placeholder="Serial Number" value={newItem.serialNumber} onChange={e => setNewItem({...newItem, serialNumber: e.target.value})} required style={{padding: '10px'}} />
-          <input type="number" placeholder="Initial Stock" value={newItem.stockLevel} onChange={e => setNewItem({...newItem, stockLevel: parseInt(e.target.value) || ''})} required style={{padding: '10px'}} />
-          <input type="number" step="0.01" placeholder="Price (Rs)" value={newItem.price} onChange={e => setNewItem({...newItem, price: parseFloat(e.target.value) || ''})} required style={{padding: '10px'}} />
-          <input placeholder="Location (e.g. Aisle 4)" value={newItem.location} onChange={e => setNewItem({...newItem, location: e.target.value})} required style={{padding: '10px', gridColumn: 'span 2'}} />
-          <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px'}}>Add to Vault</button>
-        </form>
-
-        <h2 style={{marginTop: 0, marginBottom: '20px'}}>Order Parts from Vendor</h2>
-        <form onSubmit={handleOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '30px', padding: '15px', borderRadius: '12px' }}>
-          <div>
-            <input list="vendorOrderList" placeholder="Select & Search Vendor" value={order.vendorName || ''} onChange={e => setOrder({...order, vendorName: e.target.value})} required style={{padding: '10px'}} />
-            <datalist id="vendorOrderList">
-              {vendors?.map(v => (
-                <option key={v.id} value={v.name}>{v.phoneNumber ? `${v.name} (${v.phoneNumber})` : v.name}</option>
-              ))}
-            </datalist>
-          </div>
-          <div>
-            <input list="partNameOrderList" placeholder="Select & Search Part Name" value={order.partName} onChange={e => handlePartNameSelect(e.target.value)} required style={{padding: '10px'}} />
-            <datalist id="partNameOrderList">
-              {parts?.map(p => (
-                <option key={p.id} value={p.partName}>{p.serialNumber} ({p.stockLevel} in stock)</option>
-              ))}
-            </datalist>
-          </div>
-          <div>
-            <input list="serialOrderList" placeholder="Select & Search Serial #" value={order.serialNumber} onChange={e => handleSerialSelect(e.target.value)} required style={{padding: '10px'}} />
-            <datalist id="serialOrderList">
-              {parts?.map(p => (
-                <option key={p.id} value={p.serialNumber}>{p.partName}</option>
-              ))}
-            </datalist>
-          </div>
-          <div style={{display: 'flex', gap: '8px'}}>
-            <input type="number" min="1" placeholder="Qty" value={order.quantity} onChange={e => setOrder({...order, quantity: parseInt(e.target.value)})} required style={{padding: '10px', width: '80px'}} />
-            <button type="submit" className="primary" style={{flex: 1}}>Order</button>
-          </div>
-        </form>
-        
-        <div className="data-card" style={{ marginBottom: '24px' }}>
-            <h3 style={{marginTop: 0}}>Configure Automated Orders</h3>
-            <form onSubmit={handleAutoOrder} style={{ display: 'flex', gap: '10px' }}>
-              <select value={autoOrder.partId} onChange={e => setAutoOrder({...autoOrder, partId: e.target.value})} required style={{padding: '10px', flex: 1}}>
-                <option value="">Select Part...</option>
-                {parts?.map(p => <option key={p.id} value={p.id}>{p.partName} ({p.serialNumber})</option>)}
-              </select>
-              <select value={autoOrder.vendorId} onChange={e => setAutoOrder({...autoOrder, vendorId: e.target.value})} required style={{padding: '10px', flex: 1}}>
-                <option value="">Select Vendor...</option>
-                {vendors?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-              <input type="number" value={autoOrder.autoOrderQuantity} onChange={e => setAutoOrder({...autoOrder, autoOrderQuantity: e.target.value})} placeholder="Threshold Qty" required style={{padding: '10px', width: '150px'}} />
-              <button type="submit" className="primary" style={{padding: '10px 20px'}}>Set Auto-Order</button>
+        {!isViewer && (
+          <>
+            <h2 style={{marginTop: 0, marginBottom: '20px'}}>Add New Part to Vault</h2>
+            <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '30px' }}>
+              <input placeholder="Part Name (e.g. Brake Pads)" value={newItem.partName} onChange={e => setNewItem({...newItem, partName: e.target.value})} required style={{padding: '10px'}} />
+              <input placeholder="Serial Number" value={newItem.serialNumber} onChange={e => setNewItem({...newItem, serialNumber: e.target.value})} required style={{padding: '10px'}} />
+              <input type="number" placeholder="Initial Stock" value={newItem.stockLevel} onChange={e => setNewItem({...newItem, stockLevel: parseInt(e.target.value) || ''})} required style={{padding: '10px'}} />
+              <input type="number" step="0.01" placeholder="Price (Rs)" value={newItem.price} onChange={e => setNewItem({...newItem, price: parseFloat(e.target.value) || ''})} required style={{padding: '10px'}} />
+              <input placeholder="Location (e.g. Aisle 4)" value={newItem.location} onChange={e => setNewItem({...newItem, location: e.target.value})} required style={{padding: '10px', gridColumn: 'span 2'}} />
+              <button type="submit" className="primary" style={{gridColumn: 'span 2', padding: '12px'}}>Add to Vault</button>
             </form>
-          </div>
-          
-          
-            <div style={{marginBottom: '30px', padding: '15px', borderRadius: '12px', maxHeight: '350px', overflowY: 'auto'}}>
-              <h3 style={{marginTop: 0}}>Current Orders</h3>
-              <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
-                {orders?.filter(o => o.status === 'Pending').map(o => (
-                  <li key={o.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                    <div>
-                      Ordered <strong>{o.quantity}x {o.partName} (Serial: {o.serialNumber})</strong> from {o.vendorName || o.vendor?.name || 'N/A'} on {formatDateDDMMYYYY(o.orderDate)}
-                      <span className="badge" style={{marginLeft: '10px', background: 'var(--mid-grey)'}}>{o.generation || 'Manual'} Generation</span>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px'}}>
-                      {new Date(o.orderDate).getTime() > Date.now() - 24*60*60*1000 && (
-                        <button onClick={() => handleOrderStatus(o.id, 'Canceled')} className="badge" style={{background: '#9f1239', color: '#fff', border: 'none', cursor: 'pointer'}}>Cancel</button>
-                      )}
-                      <button onClick={() => handleOrderStatus(o.id, 'Completed')} className="badge" style={{background: '#881337', color: '#fff', border: 'none', cursor: 'pointer'}}>Received</button>
-                    </div>
-                  </li>
-                ))}
-                {orders?.filter(o => o.status === 'Pending').length === 0 && <li>No current orders.</li>}
-              </ul>
-            </div>
 
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px'}}>
-            <h2 style={{margin: 0}}>Current Vault Stock</h2>
-            <input placeholder="Search Part by Name or Serial..." value={vaultSearch} onChange={e => setVaultSearch(e.target.value)} style={{padding: '8px', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.2)', width: '250px'}} />
+            <h2 style={{marginTop: 0, marginBottom: '20px'}}>Order Parts from Vendor</h2>
+            <form onSubmit={handleOrder} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '30px', padding: '15px', borderRadius: '12px' }}>
+              <div>
+                <input list="vendorOrderList" placeholder="Select & Search Vendor" value={order.vendorName || ''} onChange={e => setOrder({...order, vendorName: e.target.value})} required style={{padding: '10px'}} />
+                <datalist id="vendorOrderList">
+                  {vendors?.map(v => (
+                    <option key={v.id} value={v.name}>{v.phoneNumber ? `${v.name} (${v.phoneNumber})` : v.name}</option>
+                  ))}
+                </datalist>
+              </div>
+              <div>
+                <input list="partNameOrderList" placeholder="Select & Search Part Name" value={order.partName} onChange={e => handlePartNameSelect(e.target.value)} required style={{padding: '10px'}} />
+                <datalist id="partNameOrderList">
+                  {parts?.map(p => (
+                    <option key={p.id} value={p.partName}>{p.serialNumber} ({p.stockLevel} in stock)</option>
+                  ))}
+                </datalist>
+              </div>
+              <div>
+                <input list="serialOrderList" placeholder="Select & Search Serial #" value={order.serialNumber} onChange={e => handleSerialSelect(e.target.value)} required style={{padding: '10px'}} />
+                <datalist id="serialOrderList">
+                  {parts?.map(p => (
+                    <option key={p.id} value={p.serialNumber}>{p.partName}</option>
+                  ))}
+                </datalist>
+              </div>
+              <div style={{display: 'flex', gap: '8px'}}>
+                <input type="number" min="1" placeholder="Qty" value={order.quantity} onChange={e => setOrder({...order, quantity: parseInt(e.target.value)})} required style={{padding: '10px', width: '80px'}} />
+                <button type="submit" className="primary" style={{flex: 1}}>Order</button>
+              </div>
+            </form>
+            
+            <div className="data-card" style={{ marginBottom: '24px' }}>
+                <h3 style={{marginTop: 0}}>Configure Automated Orders</h3>
+                <form onSubmit={handleAutoOrder} style={{ display: 'flex', gap: '10px' }}>
+                  <select value={autoOrder.partId} onChange={e => setAutoOrder({...autoOrder, partId: e.target.value})} required style={{padding: '10px', flex: 1}}>
+                    <option value="">Select Part...</option>
+                    {parts?.map(p => <option key={p.id} value={p.id}>{p.partName} ({p.serialNumber})</option>)}
+                  </select>
+                  <select value={autoOrder.vendorId} onChange={e => setAutoOrder({...autoOrder, vendorId: e.target.value})} required style={{padding: '10px', flex: 1}}>
+                    <option value="">Select Vendor...</option>
+                    {vendors?.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                  </select>
+                  <input type="number" value={autoOrder.autoOrderQuantity} onChange={e => setAutoOrder({...autoOrder, autoOrderQuantity: e.target.value})} placeholder="Threshold Qty" required style={{padding: '10px', width: '150px'}} />
+                  <button type="submit" className="primary" style={{padding: '10px 20px'}}>Set Auto-Order</button>
+                </form>
+            </div>
+          </>
+        )}
+          
+          <div style={{marginBottom: '30px', padding: '15px', borderRadius: '12px', maxHeight: '350px', overflowY: 'auto'}}>
+            <h3 style={{marginTop: 0}}>Current Orders</h3>
+            <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+              {orders?.filter(o => o.status === 'Pending').map(o => (
+                <li key={o.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                  <div>
+                    Ordered <strong>{o.quantity}x {o.partName} (Serial: {o.serialNumber})</strong> from {o.vendorName || o.vendor?.name || 'N/A'} on {formatDateDDMMYYYY(o.orderDate)}
+                    <span className="badge" style={{marginLeft: '10px', background: 'var(--mid-grey)'}}>{o.generation || 'Manual'} Generation</span>
+                  </div>
+                  <div style={{display: 'flex', gap: '10px'}}>
+                    {isViewer ? (
+                      <span style={{color: '#94a3b8', fontSize: '12px'}}>Pending</span>
+                    ) : (
+                      <>
+                        {new Date(o.orderDate).getTime() > Date.now() - 24*60*60*1000 && (
+                          <button onClick={() => handleOrderStatus(o.id, 'Canceled')} className="badge" style={{background: '#9f1239', color: '#fff', border: 'none', cursor: 'pointer'}}>Cancel</button>
+                        )}
+                        <button onClick={() => handleOrderStatus(o.id, 'Completed')} className="badge" style={{background: '#881337', color: '#fff', border: 'none', cursor: 'pointer'}}>Received</button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+              {orders?.filter(o => o.status === 'Pending').length === 0 && <li>No current orders.</li>}
+            </ul>
           </div>
-        
-          <div style={{ maxHeight: '420px', overflowY: 'auto', marginTop: '10px' }}>
-            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(159, 18, 57, 0.4)' }}>
-                  <th style={{padding: '12px'}}>Part Name</th>
-                  <th style={{padding: '12px'}}>Serial #</th>
-                  <th style={{padding: '12px'}}>Stock</th>
-                  <th style={{padding: '12px'}}>Price</th>
-                  <th style={{padding: '12px'}}>Location</th>
-                  <th style={{padding: '12px'}}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredParts?.length === 0 && <tr><td colSpan="6" style={{padding: '20px', textAlign: 'center'}}>No parts match your search.</td></tr>}
-                {filteredParts?.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{padding: '12px'}}>{p.partName}</td>
-                    <td style={{padding: '12px', fontFamily: 'monospace'}}>{p.serialNumber || 'N/A'}</td>
-                    <td style={{padding: '12px', color: p.stockLevel < 10 ? '#be123c' : '#f8fafc', fontWeight: 'bold'}}>
-                      {p.stockLevel} {p.stockLevel < 10 && <span style={{marginLeft: '8px', fontSize: '0.8em', padding: '2px 6px', borderRadius: '4px', background: '#9f1239', color: '#fff'}}>LOW STOCK</span>}
-                    </td>
-                    <td style={{padding: '12px'}}>Rs. {p.price.toFixed(2)}</td>
-                    <td style={{padding: '12px'}}>{p.location || 'N/A'}</td>
+
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px'}}>
+          <h2 style={{margin: 0}}>Current Vault Stock</h2>
+          <input placeholder="Search Part by Name or Serial..." value={vaultSearch} onChange={e => setVaultSearch(e.target.value)} style={{padding: '8px', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.2)', width: '250px'}} />
+        </div>
+      
+        <div style={{ maxHeight: '420px', overflowY: 'auto', marginTop: '10px' }}>
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(159, 18, 57, 0.4)' }}>
+                <th style={{padding: '12px'}}>Part Name</th>
+                <th style={{padding: '12px'}}>Serial #</th>
+                <th style={{padding: '12px'}}>Stock</th>
+                <th style={{padding: '12px'}}>Price</th>
+                <th style={{padding: '12px'}}>Location</th>
+                {!isViewer && <th style={{padding: '12px'}}>Action</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredParts?.length === 0 && <tr><td colSpan={isViewer ? "5" : "6"} style={{padding: '20px', textAlign: 'center'}}>No parts match your search.</td></tr>}
+              {filteredParts?.map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{padding: '12px'}}>{p.partName}</td>
+                  <td style={{padding: '12px', fontFamily: 'monospace'}}>{p.serialNumber || 'N/A'}</td>
+                  <td style={{padding: '12px', color: p.stockLevel < 10 ? '#be123c' : '#f8fafc', fontWeight: 'bold'}}>
+                    {p.stockLevel} {p.stockLevel < 10 && <span style={{marginLeft: '8px', fontSize: '0.8em', padding: '2px 6px', borderRadius: '4px', background: '#9f1239', color: '#fff'}}>LOW STOCK</span>}
+                  </td>
+                  <td style={{padding: '12px'}}>Rs. {p.price.toFixed(2)}</td>
+                  <td style={{padding: '12px'}}>{p.location || 'N/A'}</td>
+                  {!isViewer && (
                     <td style={{padding: '12px'}}>
                       <button onClick={() => handleDelete(p.id)} style={{padding: '5px 10px', border: 'none', borderRadius: '4px', cursor: 'pointer', background: '#475569', color: '#fff'}}>Delete</button>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
       </div>
     </div>
@@ -1801,6 +1876,7 @@ const handleOrder = async (e) => {
 };
 
 export const Registry = ({ token, userRole }) => {
+  const isViewer = userRole?.toUpperCase() === 'VIEWER';
   const [vendors, setVendors] = React.useState([]);
   const [employees, setEmployees] = React.useState([]);
   const [empForm, setEmpForm] = React.useState({ name: '', post: '', salary: '', phone: '', email: '', address: '', aadharCard: null, panCard: null, resume: null, photo: null, bankPassbook: null, experienceLetter: null });
@@ -1836,6 +1912,7 @@ export const Registry = ({ token, userRole }) => {
 
   const handleSaveGarage = async (e) => {
     e.preventDefault();
+    if (isViewer) return;
     try {
       const res = await fetch('/api/registry/garages', {
         method: 'POST',
@@ -1856,6 +1933,7 @@ export const Registry = ({ token, userRole }) => {
   };
 
   const handleStartEditVendor = (v) => {
+    if (isViewer) return;
     setEditingVendorId(v.id);
     setVendorForm({
       name: v.name || '',
@@ -1873,6 +1951,7 @@ export const Registry = ({ token, userRole }) => {
 
   const handleSaveVendor = async (e) => {
     e.preventDefault();
+    if (isViewer) return;
     const url = editingVendorId ? `/api/registry/vendors/${editingVendorId}` : '/api/registry/vendors';
     const method = editingVendorId ? 'PUT' : 'POST';
     const res = await fetch(url, {
@@ -1889,12 +1968,14 @@ export const Registry = ({ token, userRole }) => {
   };
 
   const handleDeleteVendor = async (id) => {
+    if (isViewer) return;
     if (!window.confirm("Are you sure you want to delete this vendor?")) return;
     await fetch(`/api/registry/vendors/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     fetchData();
   };
 
   const handleStartEditEmployee = (emp) => {
+    if (isViewer) return;
     setEditingEmpId(emp.id);
     setEmpForm({
       name: emp.name || '',
@@ -1919,6 +2000,7 @@ export const Registry = ({ token, userRole }) => {
 
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
+    if (isViewer) return;
     const formData = new FormData();
     formData.append('name', empForm.name);
     formData.append('post', empForm.post);
@@ -1948,12 +2030,14 @@ export const Registry = ({ token, userRole }) => {
   };
 
   const handleDeleteEmployee = async (id) => {
+    if (isViewer) return;
     if (!window.confirm("Are you sure you want to delete this employee?")) return;
     await fetch(`/api/registry/employees/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     fetchData();
   };
 
   const handleStartEditUser = (u) => {
+    if (isViewer) return;
     setEditingUserId(u.id);
     setUserForm({
       username: u.username || '',
@@ -1972,6 +2056,7 @@ export const Registry = ({ token, userRole }) => {
 
   const handleSaveUser = async (e) => {
     e.preventDefault();
+    if (isViewer) return;
     if (userRole?.toUpperCase() === 'MANAGER' && userForm.role === 'OWNER') {
       alert("Managers cannot create/update Owner level users.");
       return;
@@ -2005,6 +2090,7 @@ export const Registry = ({ token, userRole }) => {
   };
 
   const handleDeleteUser = async (targetUser) => {
+    if (isViewer) return;
     if (userRole?.toUpperCase() === 'MANAGER' && (targetUser.role?.toUpperCase() === 'OWNER' || targetUser.role?.toUpperCase() === 'ADMIN')) {
       alert("Managers cannot delete Owner or Admin level users.");
       return;
@@ -2030,46 +2116,62 @@ export const Registry = ({ token, userRole }) => {
 
   return (
     <div>
-      <div className="page-header"><h1>Registry</h1></div>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0 }}>Registry</h1>
+        {isViewer && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.4)', padding: '6px 14px', borderRadius: '6px', color: '#38bdf8', fontSize: '13px', fontWeight: 600 }}>
+            <span>👀</span> Viewer Mode (Read-Only)
+          </div>
+        )}
+      </div>
+
+      {isViewer && (
+        <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#7dd3fc', fontSize: '13px' }}>
+          <strong>👀 Viewer Access:</strong> You have full visibility across all registry records in read-only mode. Adding, editing, or deleting records is disabled.
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
         
         {/* Employee Registry */}
         <div className="data-card">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-accent)', paddingBottom:'10px'}}>
             <h2 style={{marginTop:0, marginBottom:0}}>Employee Registry</h2>
-            {editingEmpId && (
+            {!isViewer && editingEmpId && (
               <button onClick={handleCancelEditEmployee} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', textAlign: 'center'}}>Cancel</button>
             )}
           </div>
-          <form onSubmit={handleSaveEmployee} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Name" value={empForm.name} onChange={e=>setEmpForm({...empForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
-              <input placeholder="Post (e.g. Mechanic)" value={empForm.post} onChange={e=>setEmpForm({...empForm, post: e.target.value})} required style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Salary" type="number" value={empForm.salary} onChange={e=>setEmpForm({...empForm, salary: e.target.value})} required style={{flex:1, padding:'8px'}} />
-              <input placeholder="Mobile" value={empForm.phone} onChange={e=>setEmpForm({...empForm, phone: e.target.value})} required style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Email" type="email" value={empForm.email} onChange={e=>setEmpForm({...empForm, email: e.target.value})} required style={{flex:1, padding:'8px'}} />
-              <input placeholder="Address" value={empForm.address} onChange={e=>setEmpForm({...empForm, address: e.target.value})} required style={{flex:2, padding:'8px'}} />
-            </div>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop: '10px'}}>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Aadhar Card <input type="file" onChange={e=>setEmpForm({...empForm, aadharCard: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>PAN Card <input type="file" onChange={e=>setEmpForm({...empForm, panCard: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Resume <input type="file" onChange={e=>setEmpForm({...empForm, resume: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Photo <input type="file" onChange={e=>setEmpForm({...empForm, photo: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Bank Passbook <input type="file" onChange={e=>setEmpForm({...empForm, bankPassbook: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-              <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Experience Letter <input type="file" onChange={e=>setEmpForm({...empForm, experienceLetter: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
-            </div>
-            <div style={{display:'flex', gap:'10px', marginTop:'6px'}}>
-              <button type="submit" className="primary" style={{padding:'8px 16px'}}>{editingEmpId ? 'Update Employee' : 'Add Employee'}</button>
-              {editingEmpId && (
-                <button type="button" onClick={handleCancelEditEmployee} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
-              )}
-            </div>
-          </form>
-          <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+          {!isViewer && (
+            <form onSubmit={handleSaveEmployee} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Name" value={empForm.name} onChange={e=>setEmpForm({...empForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
+                <input placeholder="Post (e.g. Mechanic)" value={empForm.post} onChange={e=>setEmpForm({...empForm, post: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Salary" type="number" value={empForm.salary} onChange={e=>setEmpForm({...empForm, salary: e.target.value})} required style={{flex:1, padding:'8px'}} />
+                <input placeholder="Mobile" value={empForm.phone} onChange={e=>setEmpForm({...empForm, phone: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Email" type="email" value={empForm.email} onChange={e=>setEmpForm({...empForm, email: e.target.value})} required style={{flex:1, padding:'8px'}} />
+                <input placeholder="Address" value={empForm.address} onChange={e=>setEmpForm({...empForm, address: e.target.value})} required style={{flex:2, padding:'8px'}} />
+              </div>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop: '10px'}}>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Aadhar Card <input type="file" onChange={e=>setEmpForm({...empForm, aadharCard: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>PAN Card <input type="file" onChange={e=>setEmpForm({...empForm, panCard: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Resume <input type="file" onChange={e=>setEmpForm({...empForm, resume: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Photo <input type="file" onChange={e=>setEmpForm({...empForm, photo: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Bank Passbook <input type="file" onChange={e=>setEmpForm({...empForm, bankPassbook: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+                <label style={{fontSize: '0.85em', color: 'var(--text-muted)'}}>Experience Letter <input type="file" onChange={e=>setEmpForm({...empForm, experienceLetter: e.target.files[0]})} style={{marginTop:'4px'}} /></label>
+              </div>
+              <div style={{display:'flex', gap:'10px', marginTop:'6px'}}>
+                <button type="submit" className="primary" style={{padding:'8px 16px'}}>{editingEmpId ? 'Update Employee' : 'Add Employee'}</button>
+                {editingEmpId && (
+                  <button type="button" onClick={handleCancelEditEmployee} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
+                )}
+              </div>
+            </form>
+          )}
+          <div style={{maxHeight: '400px', overflowY: 'auto', marginTop: isViewer ? '14px' : '0'}}>
             <ul style={{listStyle:'none', padding:0, margin:0}}>
               {employees?.map(emp => (
                 <li key={emp.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
@@ -2078,10 +2180,12 @@ export const Registry = ({ token, userRole }) => {
                     <small style={{color: 'var(--text-muted)'}}>Salary: Rs. {emp.salary} | Phone: {emp.phone} | Email: {emp.email}</small><br/>
                     <small style={{color: 'var(--text-muted)'}}>Address: {emp.address}</small>
                   </div>
-                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                    <button onClick={() => handleStartEditEmployee(emp)} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Edit</button>
-                    <button onClick={() => handleDeleteEmployee(emp.id)} className="badge" style={{background: 'var(--badge-critical, #be123c)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Remove</button>
-                  </div>
+                  {!isViewer && (
+                    <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                      <button onClick={() => handleStartEditEmployee(emp)} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Edit</button>
+                      <button onClick={() => handleDeleteEmployee(emp.id)} className="badge" style={{background: 'var(--badge-critical, #be123c)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Remove</button>
+                    </div>
+                  )}
                 </li>
               ))}
               {(!employees || employees.length === 0) && <li style={{color:'var(--text-muted)', textAlign:'center', padding:'15px'}}>No employees registered.</li>}
@@ -2093,30 +2197,32 @@ export const Registry = ({ token, userRole }) => {
         <div className="data-card">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-accent)', paddingBottom:'10px'}}>
             <h2 style={{marginTop:0, marginBottom:0}}>Vendor Registry</h2>
-            {editingVendorId && (
+            {!isViewer && editingVendorId && (
               <button onClick={handleCancelEditVendor} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', textAlign: 'center'}}>Cancel</button>
             )}
           </div>
-          <form onSubmit={handleSaveVendor} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Vendor Name" value={vendorForm.name} onChange={e=>setVendorForm({...vendorForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
-              <input placeholder="Contact Phone" value={vendorForm.phoneNumber} onChange={e=>setVendorForm({...vendorForm, phoneNumber: e.target.value})} required style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Email" type="email" value={vendorForm.email} onChange={e=>setVendorForm({...vendorForm, email: e.target.value})} style={{flex:1, padding:'8px'}} />
-              <input placeholder="Website" value={vendorForm.site} onChange={e=>setVendorForm({...vendorForm, site: e.target.value})} style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Address" value={vendorForm.address} onChange={e=>setVendorForm({...vendorForm, address: e.target.value})} required style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <button type="submit" className="primary" style={{padding:'8px 16px'}}>{editingVendorId ? 'Update Vendor' : 'Add Vendor'}</button>
-              {editingVendorId && (
-                <button type="button" onClick={handleCancelEditVendor} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
-              )}
-            </div>
-          </form>
-          <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+          {!isViewer && (
+            <form onSubmit={handleSaveVendor} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Vendor Name" value={vendorForm.name} onChange={e=>setVendorForm({...vendorForm, name: e.target.value})} required style={{flex:1, padding:'8px'}} />
+                <input placeholder="Contact Phone" value={vendorForm.phoneNumber} onChange={e=>setVendorForm({...vendorForm, phoneNumber: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Email" type="email" value={vendorForm.email} onChange={e=>setVendorForm({...vendorForm, email: e.target.value})} style={{flex:1, padding:'8px'}} />
+                <input placeholder="Website" value={vendorForm.site} onChange={e=>setVendorForm({...vendorForm, site: e.target.value})} style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Address" value={vendorForm.address} onChange={e=>setVendorForm({...vendorForm, address: e.target.value})} required style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <button type="submit" className="primary" style={{padding:'8px 16px'}}>{editingVendorId ? 'Update Vendor' : 'Add Vendor'}</button>
+                {editingVendorId && (
+                  <button type="button" onClick={handleCancelEditVendor} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer'}}>Cancel</button>
+                )}
+              </div>
+            </form>
+          )}
+          <div style={{maxHeight: '400px', overflowY: 'auto', marginTop: isViewer ? '14px' : '0'}}>
             <ul style={{listStyle:'none', padding:0, margin:0}}>
               {vendors?.map(v => (
                 <li key={v.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
@@ -2124,10 +2230,12 @@ export const Registry = ({ token, userRole }) => {
                     <strong>{v.name}</strong><br/>
                     <small style={{color:'var(--text-muted)'}}>{v.phoneNumber} | {v.email} | {v.address}</small>
                   </div>
-                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                    <button onClick={() => handleStartEditVendor(v)} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Edit</button>
-                    <button onClick={() => handleDeleteVendor(v.id)} className="badge" style={{background: 'var(--badge-critical, #be123c)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Delete</button>
-                  </div>
+                  {!isViewer && (
+                    <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                      <button onClick={() => handleStartEditVendor(v)} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Edit</button>
+                      <button onClick={() => handleDeleteVendor(v.id)} className="badge" style={{background: 'var(--badge-critical, #be123c)', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center'}}>Delete</button>
+                    </div>
+                  )}
                 </li>
               ))}
               {(!vendors || vendors.length === 0) && <li style={{color:'var(--text-muted)', textAlign:'center', padding:'15px'}}>No vendors registered.</li>}
@@ -2139,9 +2247,11 @@ export const Registry = ({ token, userRole }) => {
         <div className="data-card">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-accent)', paddingBottom:'10px'}}>
             <h2 style={{marginTop:0, marginBottom:0}}>Garage Details Registry</h2>
-            <button onClick={() => setGarageForm({...garageForm, isEditing: !garageForm.isEditing})} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth: '65px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', textAlign: 'center'}}>{garageForm.isEditing ? 'Cancel' : 'Edit'}</button>
+            {!isViewer && (
+              <button onClick={() => setGarageForm({...garageForm, isEditing: !garageForm.isEditing})} className="badge" style={{background: 'var(--badge-info, #2563eb)', minWidth: '65px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', textAlign: 'center'}}>{garageForm.isEditing ? 'Cancel' : 'Edit'}</button>
+            )}
           </div>
-          {garageForm.isEditing ? (
+          {!isViewer && garageForm.isEditing ? (
             <form onSubmit={handleSaveGarage} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px'}}>
               <input placeholder="Garage Name" value={garageForm.name} onChange={e=>setGarageForm({...garageForm, name: e.target.value})} required style={{padding:'8px'}} />
               <input placeholder="Branch Name" value={garageForm.branchName || ''} onChange={e=>setGarageForm({...garageForm, branchName: e.target.value})} required style={{padding:'8px'}} />
@@ -2167,55 +2277,58 @@ export const Registry = ({ token, userRole }) => {
         <div className="data-card">
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid var(--border-accent)', paddingBottom:'10px'}}>
             <h2 style={{marginTop:0, marginBottom:0}}>System Users (Login Access)</h2>
-            {editingUserId && (
+            {!isViewer && editingUserId && (
               <button onClick={handleCancelEditUser} className="badge" style={{background: 'var(--mid-grey, #475569)', minWidth: '65px', padding: '6px 12px', fontSize: '11px', cursor: 'pointer', textAlign: 'center'}}>Cancel</button>
             )}
           </div>
-          <form onSubmit={handleSaveUser} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="Username" value={userForm.username} onChange={e=>setUserForm({...userForm, username: e.target.value})} required style={{flex:1, padding:'8px'}} />
-              <input placeholder={editingUserId ? "New Password (optional)" : "Password"} type="password" value={userForm.password} onChange={e=>setUserForm({...userForm, password: e.target.value})} required={!editingUserId} style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <select value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value})} style={{flex:1, padding:'8px'}}>
-                <option value="OWNER">Owner</option>
-                <option value="MANAGER">Manager</option>
-                <option value="EMPLOYEE">Employee</option>
-              </select>
-              <input placeholder="Full Name" value={userForm.fullName || ''} onChange={e=>setUserForm({...userForm, fullName: e.target.value})} style={{flex:1, padding:'8px'}} />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <input 
-                list="securityQuestionsList"
-                placeholder="Security Question (Select or enter)" 
-                value={userForm.securityQuestion || ''} 
-                onChange={e=>setUserForm({...userForm, securityQuestion: e.target.value})} 
-                required 
-                style={{flex:1, padding:'8px'}} 
-              />
-              <datalist id="securityQuestionsList">
-                <option value="What is your first school name?" />
-                <option value="What is the name of your first pet?" />
-                <option value="What city were you born in?" />
-                <option value="What was the make of your first car or bike?" />
-                <option value="What is your mother's maiden name?" />
-              </datalist>
-              <input 
-                placeholder="Security Answer" 
-                value={userForm.securityAnswer || ''} 
-                onChange={e=>setUserForm({...userForm, securityAnswer: e.target.value})} 
-                required 
-                style={{flex:1, padding:'8px'}} 
-              />
-            </div>
-            <div style={{display:'flex', gap:'10px'}}>
-              <button type="submit" className="primary" style={{padding:'8px 16px', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>{editingUserId ? 'Update User' : 'Add User'}</button>
-              {editingUserId && (
-                <button type="button" onClick={handleCancelEditUser} className="badge" style={{background: '#475569', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer', color: '#fff', border: 'none'}}>Cancel</button>
-              )}
-            </div>
-          </form>
-          <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+          {!isViewer && (
+            <form onSubmit={handleSaveUser} style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'14px', marginBottom:'20px'}}>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input placeholder="Username" value={userForm.username} onChange={e=>setUserForm({...userForm, username: e.target.value})} required style={{flex:1, padding:'8px'}} />
+                <input placeholder={editingUserId ? "New Password (optional)" : "Password"} type="password" value={userForm.password} onChange={e=>setUserForm({...userForm, password: e.target.value})} required={!editingUserId} style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <select value={userForm.role} onChange={e=>setUserForm({...userForm, role: e.target.value})} style={{flex:1, padding:'8px'}}>
+                  <option value="OWNER">Owner</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="VIEWER">Viewer (Read-Only)</option>
+                </select>
+                <input placeholder="Full Name" value={userForm.fullName || ''} onChange={e=>setUserForm({...userForm, fullName: e.target.value})} style={{flex:1, padding:'8px'}} />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <input 
+                  list="securityQuestionsList"
+                  placeholder="Security Question (Select or enter)" 
+                  value={userForm.securityQuestion || ''} 
+                  onChange={e=>setUserForm({...userForm, securityQuestion: e.target.value})} 
+                  required 
+                  style={{flex:1, padding:'8px'}} 
+                />
+                <datalist id="securityQuestionsList">
+                  <option value="What is your first school name?" />
+                  <option value="What is the name of your first pet?" />
+                  <option value="What city were you born in?" />
+                  <option value="What was the make of your first car or bike?" />
+                  <option value="What is your mother's maiden name?" />
+                </datalist>
+                <input 
+                  placeholder="Security Answer" 
+                  value={userForm.securityAnswer || ''} 
+                  onChange={e=>setUserForm({...userForm, securityAnswer: e.target.value})} 
+                  required 
+                  style={{flex:1, padding:'8px'}} 
+                />
+              </div>
+              <div style={{display:'flex', gap:'10px'}}>
+                <button type="submit" className="primary" style={{padding:'8px 16px', background: '#9f1239', color: '#fff', border: '1px solid #be123c'}}>{editingUserId ? 'Update User' : 'Add User'}</button>
+                {editingUserId && (
+                  <button type="button" onClick={handleCancelEditUser} className="badge" style={{background: '#475569', minWidth: '65px', padding: '6px 14px', fontSize: '11px', cursor: 'pointer', color: '#fff', border: 'none'}}>Cancel</button>
+                )}
+              </div>
+            </form>
+          )}
+          <div style={{maxHeight: '400px', overflowY: 'auto', marginTop: isViewer ? '14px' : '0'}}>
             <ul style={{listStyle:'none', padding:0, margin:0}}>
               {usersList?.map(u => (
                 <li key={u.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
@@ -2227,10 +2340,12 @@ export const Registry = ({ token, userRole }) => {
                       </div>
                     )}
                   </div>
-                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                    <button onClick={() => handleStartEditUser(u)} className="badge" style={{background: '#475569', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center', color: '#fff', border: 'none'}}>Edit</button>
-                    <button onClick={() => handleDeleteUser(u)} className="badge" style={{background: '#9f1239', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center', color: '#fff', border: 'none'}}>Revoke</button>
-                  </div>
+                  {!isViewer && (
+                    <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                      <button onClick={() => handleStartEditUser(u)} className="badge" style={{background: '#475569', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center', color: '#fff', border: 'none'}}>Edit</button>
+                      <button onClick={() => handleDeleteUser(u)} className="badge" style={{background: '#9f1239', minWidth:'65px', padding:'6px 12px', fontSize:'11px', cursor:'pointer', textAlign:'center', color: '#fff', border: 'none'}}>Revoke</button>
+                    </div>
+                  )}
                 </li>
               ))}
               {(!usersList || usersList.length === 0) && <li style={{color:'var(--text-muted)', textAlign:'center', padding:'15px'}}>No system users found.</li>}

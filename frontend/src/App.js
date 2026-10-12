@@ -338,6 +338,7 @@ function App() {
   const isOwner = role === 'OWNER';
   const isManager = role === 'MANAGER';
   const isEmployee = role === 'EMPLOYEE';
+  const isViewer = role === 'VIEWER';
 
   return (
     <Router>
@@ -373,24 +374,24 @@ function App() {
           </ul>
           <div className="sidebar-user" onClick={logout}>
             <div className="user-avatar-circle">{user?.username?.[0]?.toUpperCase() || 'U'}</div>
-            <div className="user-details"><span className="user-name">{user?.username || 'User'}</span><span className="user-role">{role} / Logout</span></div>
+            <div className="user-details"><span className="user-name">{user?.username || 'User'}</span><span className="user-role">{role === 'VIEWER' ? 'VIEWER (READ-ONLY)' : role} / Logout</span></div>
           </div>
         </nav>
 
         {/* DYNAMIC CONTENT ROUTER */}
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Overview token={token} />} />
-            {(!isEmployee) && <Route path="/scanner" element={<GateScanner token={token} />} />}
-            <Route path="/vehicles" element={<Vehicles token={token} />} />
+            <Route path="/" element={<Overview token={token} userRole={role} />} />
+            {(!isEmployee) && <Route path="/scanner" element={<GateScanner token={token} userRole={role} />} />}
+            <Route path="/vehicles" element={<Vehicles token={token} userRole={role} />} />
             <Route path="/maintenance" element={<Maintenance token={token} userRole={role} />} />
             <Route path="/reports" element={<Reports token={token} userRole={role} />} />
-            {(!isEmployee) && <Route path="/geofences" element={<Geofences />} />}
-            {(!isEmployee) && <Route path="/alerts" element={<Alerts token={token} />} />}
-            {(!isEmployee) && <Route path="/inventory" element={<Inventory token={token} />} />}
-            {(!isEmployee) && <Route path="/finance" element={<Finance token={token} />} />}
+            {(!isEmployee) && <Route path="/geofences" element={<Geofences userRole={role} />} />}
+            {(!isEmployee) && <Route path="/alerts" element={<Alerts token={token} userRole={role} />} />}
+            {(!isEmployee) && <Route path="/inventory" element={<Inventory token={token} userRole={role} />} />}
+            {(!isEmployee) && <Route path="/finance" element={<Finance token={token} userRole={role} />} />}
             {(!isEmployee) && <Route path="/registry" element={<Registry token={token} userRole={role} />} />}
-            <Route path="/health" element={<SmartHealth token={token} />} />
+            <Route path="/health" element={<SmartHealth token={token} userRole={role} />} />
           </Routes>
         </main>
       </div>
