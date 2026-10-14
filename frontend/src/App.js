@@ -366,6 +366,7 @@ function App() {
             <li><NavLink to="/vehicles" className={({isActive}) => isActive ? "active-link" : ""}>🚗 Vehicles</NavLink></li>
             <li><NavLink to="/maintenance" className={({isActive}) => isActive ? "active-link" : ""}>🔧 Maintenance</NavLink></li>
             <li><NavLink to="/reports" className={({isActive}) => isActive ? "active-link" : ""}>📈 Reports</NavLink></li>
+            <li><NavLink to="/health" className={({isActive}) => isActive ? "active-link" : ""}>🩺 Smart Health</NavLink></li>
             {(!isEmployee) && <li><NavLink to="/geofences" className={({isActive}) => isActive ? "active-link" : ""}>📍 Geofences</NavLink></li>}
             {(!isEmployee) && <li><NavLink to="/alerts" className={({isActive}) => isActive ? "active-link" : ""}>🚨 Alerts</NavLink></li>}
             {(!isEmployee) && <li><NavLink to="/inventory" className={({isActive}) => isActive ? "active-link" : ""}>📦 Parts Vault</NavLink></li>}
